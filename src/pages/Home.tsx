@@ -76,9 +76,9 @@ export default function Home() {
               <Button 
                 as={Link}
                 to="/login"
-                color="primary"
+                color="danger"
                 size="lg"
-                variant="bordered"
+                variant="solid"
                 className="font-semibold"
               >
                 Crear Cuenta

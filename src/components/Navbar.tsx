@@ -142,7 +142,7 @@ export default function Navbar({ user }: NavbarProps) {
             <Button 
               as={Link} 
               to="/login" 
-              color="primary" 
+              color="danger" 
               variant="solid"
               className="font-medium"
             >
