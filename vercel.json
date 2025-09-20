@@ -1,0 +1,17 @@
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "env": {
+    "VITE_SUPABASE_URL": "https://fdxmbeijgmlgefesnhnd.supabase.co",
+    "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkeG1iZWlqZ21sZ2VmZXNuaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg0MDY1MzYsImV4cCI6MjA3Mzk4MjUzNn0.HZ-7CADEMgd53MtJo-ryxVh2Qh9u8mVZfksOmRe5YUU",
+    "SUPABASE_URL": "https://fdxmbeijgmlgefesnhnd.supabase.co",
+    "SUPABASE_SERVICE_KEY": "TU_SERVICE_KEY_AQUI",
+    "WEBPAY_COMMERCE_CODE": "TU_CODIGO_COMERCIO_REAL",
+    "WEBPAY_API_KEY": "TU_API_KEY_REAL",
+    "NODE_ENV": "production"
+  }
+}
