@@ -16,6 +16,7 @@ import {
   Menu,
   X
 } from 'lucide-react'
+import { Icon } from '@iconify/react'
 import { supabase, type Ebook } from '../config/supabase'
 import { getBookCoverImageWithSize } from '../utils/imageOverrides'
 import type { User } from '@supabase/supabase-js'
@@ -120,7 +121,10 @@ export default function EbookReader({ user }: EbookReaderProps) {
         </div>
 
         <div class="tip-box">
-          <h4>💡 Tip del Experto</h4>
+          <h4 className="flex items-center">
+            <Icon icon="material-symbols:lightbulb-outline" className="w-5 h-5 mr-2 text-yellow-500" />
+            Tip del Experto
+          </h4>
           <p>La mayoría de empresas chilenas subestiman el tiempo necesario para ver resultados en marketing digital. Los primeros resultados significativos aparecen entre 60-90 días, pero los resultados exponenciales vienen después de 6 meses de implementación consistente.</p>
         </div>
 

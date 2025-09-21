@@ -48,12 +48,12 @@ function App() {
     )
   }
 
-  return (
-    <Router>
-      <div className="min-h-screen bg-gray-50">
-        <Navbar user={user} />
-        <main className="pb-16">
-          <Routes>
+      return (
+        <Router>
+          <div className="min-h-screen bg-gray-50">
+            <Navbar user={user} />
+            <main className="pt-16 pb-16">
+              <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/catalogo" element={<Catalog />} />
             <Route path="/libro/:id" element={<EbookDetail user={user} />} />

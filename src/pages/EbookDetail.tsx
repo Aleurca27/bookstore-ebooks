@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Star, ShoppingCart, Download, ArrowLeft, Heart, CheckCircle, Users, BookOpen, Award, Clock, Target, TrendingUp, Zap, ChevronDown, ChevronUp, PlayCircle } from 'lucide-react'
+import { Icon } from '@iconify/react'
 import { supabase, type Ebook } from '../config/supabase'
 import { getBookCoverImageWithSize } from '../utils/imageOverrides'
 import type { User } from '@supabase/supabase-js'
@@ -18,6 +19,7 @@ export default function EbookDetail({ user }: EbookDetailProps) {
   const [addingToCart, setAddingToCart] = useState(false)
   const [isPurchased, setIsPurchased] = useState(false)
   const [expandedChapter, setExpandedChapter] = useState<number | null>(null)
+  const [showFloatingButton, setShowFloatingButton] = useState(false)
   // Force update timestamp: ${new Date().toISOString()}
 
   useEffect(() => {
@@ -28,6 +30,25 @@ export default function EbookDetail({ user }: EbookDetailProps) {
       }
     }
   }, [id, user])
+
+  // Controlar visibilidad del botón flotante basado en scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      // Buscar el botón principal del producto
+      const mainButton = document.querySelector('[data-main-button="true"]')
+      if (mainButton) {
+        const rect = mainButton.getBoundingClientRect()
+        // Mostrar botón flotante cuando el botón principal no esté visible
+        setShowFloatingButton(rect.bottom < 0)
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    // Verificar estado inicial
+    handleScroll()
+    
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const fetchBook = async (bookId: string) => {
     try {
@@ -253,15 +274,15 @@ export default function EbookDetail({ user }: EbookDetailProps) {
   return (
       <div className="min-h-screen bg-white overflow-x-hidden">
         {/* Hero Section del libro */}
-        <section className="bg-gradient-to-br from-gray-50 to-gray-100 py-12 mt-8">
+        <section className="bg-gradient-to-br from-gray-50 to-gray-100 py-4">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
           {/* Imagen del libro */}
               <div className="flex justify-center lg:justify-start">
                 <div className="w-full max-w-md md:max-w-lg lg:max-w-xl bg-white border border-gray-200 rounded-xl overflow-hidden">
               <img
-                    src={getBookCoverImageWithSize(book, 'large')}
-                alt={book.title}
+                    src="/images/portala libro.png"
+                alt="Ebook de la Publicidad"
                     className="w-full h-full object-cover"
               />
             </div>
@@ -270,21 +291,21 @@ export default function EbookDetail({ user }: EbookDetailProps) {
               {/* Información principal */}
               <div className="space-y-4 text-center lg:text-left">
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-gray-900 leading-tight">
-                {book.title}
+                Ebook de la Publicidad
               </h1>
 
                 <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start space-y-2 sm:space-y-0 sm:space-x-4">
                 <div className="flex items-center">
                   {[1, 2, 3, 4, 5].map((star) => (
                       <Star key={star} className="h-4 w-4 text-yellow-400 fill-current" />
-                    ))}
+                  ))}
                     <span className="text-gray-700 ml-2 text-sm font-medium">(4.8)</span>
                     <span className="text-gray-600 text-sm ml-3">por {book.author}</span>
-                  </div>
+                </div>
                   <div className="flex items-center text-gray-600 text-sm">
                     <Users className="h-4 w-4 mr-1" />
                     <span>2,147 lectores</span>
-                  </div>
+              </div>
             </div>
 
                 <p className="text-base md:text-lg text-gray-700 leading-relaxed max-w-2xl mx-auto lg:mx-0">
@@ -318,26 +339,24 @@ export default function EbookDetail({ user }: EbookDetailProps) {
                           <span className="text-lg">Abrir Lector</span>
                   </button>
                       </div>
-                    ) : (
+                ) : (
                       <div className="space-y-3">
                         <button
                           onClick={buyNow}
                           disabled={addingToCart || !user}
-                          className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-4 px-8 rounded-xl flex items-center justify-center space-x-3 transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                          data-main-button="true"
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl flex items-center justify-center space-x-3 transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <BookOpen className="h-6 w-6" />
+                          <img 
+                            src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48ZyBmaWxsPSJub25lIj48cGF0aCBmaWxsPSJ3aGl0ZSIgZD0ibTE2LjU1NyA2LjAyMmwtLjAzNy0uNzV6TTE0LjcgNi4yN2wtLjItLjcyM3ptLTIuMTc4IDFsLS4zNzYtLjY1ek03LjQ4NyA2LjA2bC0uMDU1Ljc0OHpNOSA2LjI3MWwtLjE3OC43Mjh6bTIuNDY1IDEuMDIybC0uMzQ5LjY2NHptMS4wNDIgOC40M2wuMzUuNjYzek0xNSAxNC42ODRsLS4xNzgtLjcyOHptMS40OS0uMjA4bC4wNTYuNzQ4em0tNC45OTcgMS4yNDVsLS4zNS42NjR6TTkgMTQuNjg1bC4xNzgtLjcyOHptLTEuNDktLjIwOGwtLjA1Ni43NDh6bS0uNzYtMS41NjZWNy40OTdoLTEuNXY1LjQxNHptMTIgMFY3LjQ1aC0xLjV2NS40NnptLTIuMjMtNy42MzhjLS42My4wMy0xLjM5Ny4xMDItMi4wMi4yNzVsLjQgMS40NDZjLjQ1OC0uMTI3IDEuMDktLjE5MyAxLjY5My0uMjIzem0tMi4wMi4yNzVjLS44MzIuMjMtMS43OTguNzUyLTIuMzU0IDEuMDczbC43NTIgMS4yOTljLjU1LS4zMiAxLjM3Mi0uNzUxIDIuMDAyLS45MjZ6TTcuNDMyIDYuODFjLjUuMDM3IDEuMDA3LjA5NyAxLjM5LjE5bC4zNTYtMS40NTdjLS41MDUtLjEyMy0xLjExLS4xOS0xLjYzNi0uMjI5em0xLjM5LjE5Yy43MjYuMTc4IDEuNjgyLjYzNyAyLjI5NC45NThsLjY5Ny0xLjMyOGMtLjYxNS0uMzIyLTEuNzEzLS44NjEtMi42MzUtMS4wODd6bTQuMDM1IDkuMzg3Yy42MS0uMzIxIDEuNTgzLS43OTIgMi4zMjEtLjk3MmwtLjM1Ni0xLjQ1N2MtLjkzNS4yMjgtMi4wNTQuNzgtMi42NjQgMS4xMDJ6bTIuMzIxLS45NzJjLjM3Ny0uMDkyLjg3NS0uMTUyIDEuMzY4LS4xODlsLS4xMTItMS40OTZjLS41Mi4wMzktMS4xMTQuMTA2LTEuNjEyLjIyOHptLTMuMzM2LS4zNTVjLS42MS0uMzIyLTEuNzI5LS44NzQtMi42NjQtMS4xMDJsLS4zNTYgMS40NTdjLjczOC4xOCAxLjcxMS42NSAyLjMyMS45NzJ6bS0yLjY2NC0xLjEwMmMtLjQ5OC0uMTIyLTEuMDkzLS4xOS0xLjYxMi0uMjI4bC0uMTEyIDEuNDk2Yy40OTMuMDM3Ljk5LjA5NyAxLjM2OC4xODl6bTguMDcyLTEuMDQ2YzAgLjQwNS0uMzQuNzgzLS44MTYuODE4bC4xMTIgMS40OTZjMS4xODYtLjA4OCAyLjIwNC0xLjA1MyAyLjIwNC0yLjMxNHptMS41LTUuNDZjMC0xLjE5NC0uOTU4LTIuMjQtMi4yMy0yLjE3OGwuMDczIDEuNDk4Yy4zMzgtLjAxNy42NTcuMjYzLjY1Ny42OHptLTEzLjUgNS40NmMwIDEuMjYgMS4wMTggMi4yMjYgMi4yMDQgMi4zMTRsLjExMi0xLjQ5NmMtLjQ3Ni0uMDM1LS44MTYtLjQxMy0uODE2LS44MTh6bTYuOTA4IDIuMTQ4YS4zNC4zNCAwIDAgMS0uMzE2IDBsLS42OTkgMS4zMjdhMS44NCAxLjg0IDAgMCAwIDEuNzE0IDB6bS0uMDEyLTguNDM4YS4zNS4zNSAwIDAgMS0uMzMzLjAwOGwtLjY5NyAxLjMyOGExLjg1IDEuODUgMCAwIDAgMS43ODItLjAzN3ptLTUuMzk2Ljg3NmMwLS40MjcuMzMzLS43MTQuNjgyLS42ODhsLjExLTEuNDk2Yy0xLjI5NC0uMDk1LTIuMjkyLjk2Mi0yLjI5MiAyLjE4NHoiLz48cGF0aCBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEuNSIgZD0iTTEyIDcuNTg1VjE2TTIgOWMwLTMuNzcxIDAtNS42NTcgMS4xNzItNi44MjhTNi4yMjkgMSAxMCAxaDRjMy43NzEgMCA1LjY1NyAwIDYuODI4IDEuMTcyUzIyIDUuMjI5IDIyIDl2NGMwIDMuNzcxIDAgNS42NTctMS4xNzIgNi44MjhTMTcuNzcxIDIxIDE0IDIxaC00Yy0zLjc3MSAwLTUuNjU3IDAtNi44MjgtMS4xNzJTMiAxNi43NzEgMiAxM3oiLz48L2c+PC9zdmc+" 
+                            alt="Comprar" 
+                            className="h-6 w-6"
+                          />
                           <span className="text-lg">
                             {addingToCart ? 'Procesando...' : 'Comprar y leer ahora'}
-                          </span>
-                        </button>
-                    <button
-                      onClick={addToCart}
-                      disabled={addingToCart || !user}
-                          className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold py-4 px-8 rounded-xl flex items-center justify-center space-x-3 transition-all duration-300 border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <ShoppingCart className="h-6 w-6" />
-                          <span className="text-lg">Añadir al carrito</span>
+                      </span>
                     </button>
+                    {/* Botón de carrito oculto para landing page */}
                       </div>
                 )}
 
@@ -350,7 +369,7 @@ export default function EbookDetail({ user }: EbookDetailProps) {
                   </p>
                 )}
               </div>
-                </div>
+            </div>
               </div>
             </div>
           </div>
@@ -539,7 +558,10 @@ export default function EbookDetail({ user }: EbookDetailProps) {
                         </ul>
                         
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                          <h4 className="font-semibold text-blue-900 mb-2">💡 Tip del Experto</h4>
+                          <h4 className="font-semibold text-blue-900 mb-2 flex items-center">
+                            <Icon icon="material-symbols:lightbulb-outline" className="w-5 h-5 mr-2 text-yellow-500" />
+                            Tip del Experto
+                          </h4>
                           <p className="text-blue-800 text-sm">
                             La mayoría de empresas chilenas subestiman el tiempo necesario para ver resultados 
                             en marketing digital. Los primeros resultados significativos aparecen entre 60-90 días.
@@ -760,218 +782,105 @@ export default function EbookDetail({ user }: EbookDetailProps) {
             ))}
           </div>
 
-          {/* Resumen total */}
-          <div className="mt-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 text-white text-center">
-            <h3 className="text-2xl font-bold mb-2">Valor total del contenido</h3>
-            <div className="flex items-center justify-center space-x-8 text-lg">
-              <div className="flex items-center">
-                <BookOpen className="w-5 h-5 mr-2" />
-                <span>327 páginas</span>
-              </div>
-              <div className="flex items-center">
-                <Clock className="w-5 h-5 mr-2" />
-                <span>8+ horas</span>
-              </div>
-              <div className="flex items-center">
-                <Target className="w-5 h-5 mr-2" />
-                <span>+$200K en templates</span>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* Bonos exclusivos optimizados */}
-      <section className="py-12 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-              Bonos exclusivos incluidos
-            </h2>
-            <p className="text-lg text-gray-600">
-              Valorados en más de $89.000 CLP, gratis con tu compra
-            </p>
-            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Bono 1 */}
-            <div className="bg-white border border-gray-200 p-6 rounded-xl hover:shadow-lg transition-shadow">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
-                  <Target className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900">Templates de Campañas</h3>
-                  <span className="text-sm text-blue-600 font-semibold">Valor: $29.000</span>
-                </div>
-              </div>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                15 plantillas listas para usar en Facebook Ads y Google Ads con ROI probado.
-              </p>
-            </div>
-
-            {/* Bono 2 */}
-            <div className="bg-white border border-gray-200 p-6 rounded-xl hover:shadow-lg transition-shadow">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center mr-4">
-                  <TrendingUp className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900">Calculadora de ROI</h3>
-                  <span className="text-sm text-blue-600 font-semibold">Valor: $19.000</span>
-                </div>
-              </div>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                Hoja de cálculo para medir el retorno de todas tus campañas digitales.
-              </p>
-            </div>
-
-            {/* Bono 3 */}
-            <div className="bg-white border border-gray-200 p-6 rounded-xl hover:shadow-lg transition-shadow">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
-                  <Zap className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900">Checklist de Lanzamiento</h3>
-                  <span className="text-sm text-blue-600 font-semibold">Valor: $41.000</span>
-                </div>
-              </div>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                Guía paso a paso para lanzar tu primera campaña exitosa sin errores.
-              </p>
-            </div>
-          </div>
-
-          {/* Resumen de valor */}
-          <div className="mt-8 text-center">
-            <div className="inline-flex items-center bg-gray-900 text-white px-6 py-3 rounded-full">
-              <span className="text-sm font-medium">Valor total de bonos:</span>
-              <span className="text-lg font-bold ml-2">$89.000 CLP</span>
-              <span className="text-sm ml-2 opacity-75">• Incluido gratis</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonios */}
+      {/* Imagen de lectura con comentario */}
       <section className="py-12 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-              Lo que dicen nuestros lectores
-            </h2>
-          </div>
-
-          <div className="flex flex-col md:flex-row items-center justify-center gap-8">
-            {/* Avatar de la persona */}
-            <div className="flex-shrink-0">
-              <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-2xl font-bold">CM</span>
-              </div>
-              <div className="text-center mt-3">
-                <div className="font-semibold text-gray-900 text-sm">Carlos Mendoza</div>
-                <div className="text-xs text-gray-500">CEO, TechStart</div>
-              </div>
+          <div className="text-center">
+            {/* Imagen de la chica */}
+            <div className="mb-8">
+              <img 
+                src="/images/M.png" 
+                alt="Chica leyendo mientras toma café"
+                className="w-full max-w-2xl mx-auto rounded-2xl shadow-lg"
+                onError={(e) => {
+                  console.log('Error cargando imagen M.png, usando placeholder...')
+                  e.currentTarget.src = 'https://via.placeholder.com/800x400/f3f4f6/9ca3af?text=Chica+leyendo+café'
+                }}
+              />
             </div>
 
-            {/* Burbuja de comentario */}
-            <div className="relative bg-white rounded-2xl p-6 shadow-lg max-w-md">
-              {/* Flecha de la burbuja */}
-              <div className="absolute left-0 top-1/2 transform -translate-x-2 -translate-y-1/2 w-0 h-0 border-t-8 border-b-8 border-r-8 border-t-transparent border-b-transparent border-r-white"></div>
-              
-              <div className="flex items-center mb-3">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} className="h-4 w-4 text-yellow-400 fill-current" />
-                ))}
+            {/* Comentario de la chica */}
+            <div className="max-w-2xl mx-auto">
+              <div className="flex justify-center">
+                {/* Burbuja de comentario */}
+                <div className="relative bg-white rounded-2xl p-6 shadow-lg max-w-lg">
+                  <div className="flex items-center mb-3">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star key={star} className="h-4 w-4 text-yellow-400 fill-current" />
+                    ))}
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed">
+                    "Perfecto para leer con un café en la mañana. Las estrategias son súper prácticas y fáciles de implementar. ¡Mi negocio online nunca había crecido tanto!"
+                  </p>
+                </div>
               </div>
-              <p className="text-gray-700 text-sm leading-relaxed">
-                "Increíble libro. Implementé las estrategias del capítulo 4 y aumenté mis ventas un 280% en solo 2 meses."
-              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Detalles del libro */}
-      <section className="py-16 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+      {/* Detalles del libro - Optimizado */}
+      <section className="py-8 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
               Detalles del libro
             </h2>
-            <p className="text-xl text-gray-600">
-              Todo lo que necesitas saber sobre este ebook
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Información técnica */}
-            <div className="space-y-8">
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-6">Información técnica</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <span className="font-medium text-gray-700">Páginas</span>
-                    <span className="font-bold text-gray-900">327 páginas</span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <span className="font-medium text-gray-700">Formato</span>
-                    <span className="font-bold text-gray-900">PDF & EPUB</span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <span className="font-medium text-gray-700">Idioma</span>
-                    <span className="font-bold text-gray-900">Español</span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <span className="font-medium text-gray-700">Tiempo de lectura</span>
-                    <span className="font-bold text-gray-900">8-10 horas</span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <span className="font-medium text-gray-700">Nivel</span>
-                    <span className="font-bold text-gray-900">Principiante a Avanzado</span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <span className="font-medium text-gray-700">Última actualización</span>
-                    <span className="font-bold text-gray-900">Diciembre 2024</span>
-                  </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Información técnica compacta */}
+                <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Información técnica</h3>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="flex flex-col">
+                  <span className="text-gray-600">Páginas</span>
+                  <span className="font-semibold text-gray-900">327</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-gray-600">Formato</span>
+                  <span className="font-semibold text-gray-900">PDF & EPUB</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-gray-600">Idioma</span>
+                  <span className="font-semibold text-gray-900">Español</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-gray-600">Tiempo</span>
+                  <span className="font-semibold text-gray-900">8-10h</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-gray-600">Nivel</span>
+                  <span className="font-semibold text-gray-900">Principiante+</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-gray-600">Actualizado</span>
+                  <span className="font-semibold text-gray-900">Dic 2024</span>
                 </div>
               </div>
             </div>
 
-            {/* Descripción detallada */}
-            <div className="space-y-8">
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-6">Descripción completa</h3>
-                <div className="prose prose-lg max-w-none text-gray-700">
-                  <p className="mb-4">
-                    <strong>El Arte de la Programación</strong> es una guía completa y actualizada que te llevará desde los conceptos básicos 
-                    hasta las estrategias más avanzadas del marketing digital moderno.
-                  </p>
-                  <p className="mb-4">
-                    Este libro ha sido creado específicamente para emprendedores chilenos y latinoamericanos que buscan escalar 
-                    sus negocios en el entorno digital actual. Cada capítulo incluye casos de estudio reales, ejercicios prácticos 
-                    y herramientas que podrás implementar inmediatamente.
-                  </p>
-                  <p className="mb-4">
-                    Con <strong>327 páginas</strong> de contenido premium, aprenderás las mismas estrategias que utilizan las 
-                    empresas más exitosas de la región para generar millones en ventas digitales.
-                  </p>
-                  <p className="mb-6">
-                    El autor, <strong>Carlos López</strong>, combina más de 10 años de experiencia en marketing digital 
-                    con casos de estudio documentados de empresas que han escalado de $0 a $1M+ utilizando estas metodologías.
-                  </p>
-                  
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-6">
-                    <h4 className="font-bold text-blue-900 mb-3">💡 Lo que hace único a este libro:</h4>
-                    <ul className="space-y-2 text-blue-800">
-                      <li>• Casos de estudio exclusivos de empresas chilenas</li>
-                      <li>• Templates y herramientas listas para usar</li>
-                      <li>• Estrategias adaptadas al mercado latinoamericano</li>
-                      <li>• Actualizaciones gratuitas de por vida</li>
-                      <li>• Acceso a comunidad privada de lectores</li>
-                    </ul>
-                  </div>
+            {/* Descripción compacta */}
+                <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Descripción</h3>
+              <div className="text-gray-700 text-sm space-y-3">
+                <p>
+                  <strong>El Arte de la Programación</strong> es una guía completa para emprendedores chilenos que buscan escalar sus negocios digitalmente.
+                </p>
+                <p>
+                  Por <strong>Carlos López</strong> - 10+ años de experiencia. Incluye casos reales de empresas que escalaron de $0 a $1M+.
+                </p>
+                <div className="bg-blue-50 rounded-lg p-4 mt-4">
+                  <h4 className="font-semibold text-blue-900 mb-2 text-sm">Incluye:</h4>
+                  <ul className="text-xs text-blue-800 space-y-1">
+                    <li>• Casos de estudio chilenos</li>
+                    <li>• Templates listos para usar</li>
+                    <li>• Actualizaciones gratuitas</li>
+                  </ul>
                 </div>
               </div>
             </div>
@@ -984,7 +893,9 @@ export default function EbookDetail({ user }: EbookDetailProps) {
       <section className="py-16 bg-white border-t border-gray-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="mb-8">
-            <div className="text-4xl mb-4">❤️</div>
+            <div className="text-4xl mb-4">
+              <Icon icon="mdi:heart" className="w-16 h-16 text-red-500 mx-auto" />
+            </div>
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
               Sobre nosotros
             </h2>
@@ -997,15 +908,15 @@ export default function EbookDetail({ user }: EbookDetailProps) {
           
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8 text-sm text-gray-500">
             <div className="flex items-center">
-              <span className="text-xl mr-2">🇨🇱</span>
+              <Icon icon="circle-flags:cl" className="w-6 h-6 mr-2" />
               <span>Hecho en Chile</span>
             </div>
             <div className="flex items-center">
-              <span className="text-xl mr-2">🚀</span>
+              <Icon icon="material-symbols:rocket-launch" className="w-6 h-6 mr-2 text-blue-500" />
               <span>Startup tecnológica</span>
             </div>
             <div className="flex items-center">
-              <span className="text-xl mr-2">👥</span>
+              <Icon icon="material-symbols:groups" className="w-6 h-6 mr-2 text-green-500" />
               <span>Expertos colaboradores</span>
             </div>
           </div>
@@ -1013,67 +924,99 @@ export default function EbookDetail({ user }: EbookDetailProps) {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <footer className="bg-white text-gray-900 py-12 border-t border-gray-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {/* Logo y descripción */}
             <div className="md:col-span-2">
               <h3 className="text-xl font-bold mb-4">Ebooks Chile</h3>
-              <p className="text-gray-400 mb-4 leading-relaxed">
+              <p className="text-gray-600 mb-4 leading-relaxed">
                 La plataforma líder en ebooks de marketing digital para emprendedores latinoamericanos. 
                 Contenido premium creado por expertos locales.
               </p>
-              <div className="flex items-center space-x-2 text-sm text-gray-400">
-                <span>🇨🇱</span>
-                <span>Hecho con ❤️ en Chile</span>
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <Icon icon="circle-flags:cl" className="w-5 h-5" />
+                <span className="flex items-center">
+                  Hecho con <Icon icon="mdi:heart" className="w-4 h-4 text-red-500 mx-1" /> en Chile
+                </span>
               </div>
             </div>
 
             {/* Enlaces rápidos */}
             <div>
               <h4 className="font-semibold mb-4">Enlaces rápidos</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link to="/" className="hover:text-white transition-colors">Inicio</Link></li>
-                <li><Link to="/catalogo" className="hover:text-white transition-colors">Catálogo</Link></li>
-                <li><Link to="/login" className="hover:text-white transition-colors">Mi cuenta</Link></li>
-                <li><Link to="/carrito" className="hover:text-white transition-colors">Carrito</Link></li>
+              <ul className="space-y-2 text-gray-600">
+                <li><Link to="/" className="hover:text-gray-900 transition-colors">Inicio</Link></li>
+                <li><Link to="/catalogo" className="hover:text-gray-900 transition-colors">Catálogo</Link></li>
+                <li><Link to="/login" className="hover:text-gray-900 transition-colors">Mi cuenta</Link></li>
+                {/* Carrito oculto para landing page */}
               </ul>
             </div>
 
             {/* Soporte */}
             <div>
               <h4 className="font-semibold mb-4">Soporte</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Centro de ayuda</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contacto</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Términos y condiciones</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Política de privacidad</a></li>
+              <ul className="space-y-2 text-gray-600">
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Centro de ayuda</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Contacto</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Términos y condiciones</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Política de privacidad</a></li>
               </ul>
             </div>
           </div>
 
           {/* Línea divisora y copyright */}
-          <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center">
-            <p className="text-gray-400 text-sm">
+          <div className="border-t border-gray-200 mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center">
+            <p className="text-gray-600 text-sm">
               © 2024 Ebooks Chile. Todos los derechos reservados.
             </p>
             <div className="flex items-center space-x-4 mt-4 sm:mt-0">
-              <span className="text-gray-400 text-sm">Síguenos:</span>
+              <span className="text-gray-600 text-sm">Síguenos:</span>
               <div className="flex space-x-3">
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  <span className="text-lg">📧</span>
+                <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+                  <Icon icon="material-symbols:mail" className="w-5 h-5" />
                 </a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  <span className="text-lg">📱</span>
+                <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+                  <Icon icon="material-symbols:phone-android" className="w-5 h-5" />
                 </a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  <span className="text-lg">💼</span>
+                <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+                  <Icon icon="material-symbols:business-center" className="w-5 h-5" />
                 </a>
             </div>
           </div>
         </div>
       </div>
       </footer>
+
+      {/* Botón flotante fijo */}
+      {showFloatingButton && (
+        <div className="fixed bottom-6 right-6 z-50">
+        {isPurchased ? (
+          <button
+            onClick={goToReader}
+            className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center space-x-3"
+          >
+            <BookOpen className="h-6 w-6" />
+            <span className="text-lg">Leer</span>
+          </button>
+        ) : (
+          <button
+            onClick={buyNow}
+            disabled={addingToCart || !user}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <img 
+              src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48ZyBmaWxsPSJub25lIj48cGF0aCBmaWxsPSJ3aGl0ZSIgZD0ibTE2LjU1NyA2LjAyMmwtLjAzNy0uNzV6TTE0LjcgNi4yN2wtLjItLjcyM3ptLTIuMTc4IDFsLS4zNzYtLjY1ek03LjQ4NyA2LjA2bC0uMDU1Ljc0OHpNOSA2LjI3MWwtLjE3OC43Mjh6bTIuNDY1IDEuMDIybC0uMzQ5LjY2NHptMS4wNDIgOC40M2wuMzUuNjYzek0xNSAxNC42ODRsLS4xNzgtLjcyOHptMS40OS0uMjA4bC4wNTYuNzQ4em0tNC45OTcgMS4yNDVsLS4zNS42NjR6TTkgMTQuNjg1bC4xNzgtLjcyOHptLTEuNDktLjIwOGwtLjA1Ni43NDh6bS0uNzYtMS41NjZWNy40OTdoLTEuNXY1LjQxNHptMTIgMFY3LjQ1aC0xLjV2NS40NnptLTIuMjMtNy42MzhjLS42My4wMy0xLjM5Ny4xMDItMi4wMi4yNzVsLjQgMS40NDZjLjQ1OC0uMTI3IDEuMDktLjE5MyAxLjY5My0uMjIzem0tMi4wMi4yNzVjLS44MzIuMjMtMS43OTguNzUyLTIuMzU0IDEuMDczbC43NTIgMS4yOTljLjU1LS4zMiAxLjM3Mi0uNzUxIDIuMDAyLS45MjZ6TTcuNDMyIDYuODFjLjUuMDM3IDEuMDA3LjA5NyAxLjM5LjE5bC4zNTYtMS40NTdjLS41MDUtLjEyMy0xLjExLS4xOS0xLjYzNi0uMjI5em0xLjM5LjE5Yy43MjYuMTc4IDEuNjgyLjYzNyAyLjI5NC45NThsLjY5Ny0xLjMyOGMtLjYxNS0uMzIyLTEuNzEzLS44NjEtMi42MzUtMS4wODd6bTQuMDM1IDkuMzg3Yy42MS0uMzIxIDEuNTgzLS43OTIgMi4zMjEtLjk3MmwtLjM1Ni0xLjQ1N2MtLjkzNS4yMjgtMi4wNTQuNzgtMi42NjQgMS4xMDJ6bTIuMzIxLS45NzJjLjM3Ny0uMDkyLjg3NS0uMTUyIDEuMzY4LS4xODlsLS4xMTItMS40OTZjLS41Mi4wMzktMS4xMTQuMTA2LTEuNjEyLjIyOHptLTMuMzM2LS4zNTVjLS42MS0uMzIyLTEuNzI5LS44NzQtMi42NjQtMS4xMDJsLS4zNTYgMS40NTdjLjczOC4xOCAxLjcxMS42NSAyLjMyMS45NzJ6bS0yLjY2NC0xLjEwMmMtLjQ5OC0uMTIyLTEuMDkzLS4xOS0xLjYxMi0uMjI4bC0uMTEyIDEuNDk2Yy40OTMuMDM3Ljk5LjA5NyAxLjM2OC4xODl6bTguMDcyLTEuMDQ2YzAgLjQwNS0uMzQuNzgzLS44MTYuODE4bC4xMTIgMS40OTZjMS4xODYtLjA4OCAyLjIwNC0xLjA1MyAyLjIwNC0yLjMxNHptMS41LTUuNDZjMC0xLjE5NC0uOTU4LTIuMjQtMi4yMy0yLjE3OGwuMDczIDEuNDk4Yy4zMzgtLjAxNy42NTcuMjYzLjY1Ny42OHptLTEzLjUgNS40NmMwIDEuMjYgMS4wMTggMi4yMjYgMi4yMDQgMi4zMTRsLjExMi0xLjQ5NmMtLjQ3Ni0uMDM1LS44MTYtLjQxMy0uODE2LS44MTh6bTYuOTA4IDIuMTQ4YS4zNC4zNCAwIDAgMS0uMzE2IDBsLS42OTkgMS4zMjdhMS44NCAxLjg0IDAgMCAwIDEuNzE0IDB6bS0uMDEyLTguNDM4YS4zNS4zNSAwIDAgMS0uMzMzLjAwOGwtLjY5NyAxLjMyOGExLjg1IDEuODUgMCAwIDAgMS43ODItLjAzN3ptLTUuMzk2Ljg3NmMwLS40MjcuMzMzLS43MTQuNjgyLS42ODhsLjExLTEuNDk2Yy0xLjI5NC0uMDk1LTIuMjkyLjk2Mi0yLjI5MiAyLjE4NHoiLz48cGF0aCBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEuNSIgZD0iTTEyIDcuNTg1VjE2TTIgOWMwLTMuNzcxIDAtNS42NTcgMS4xNzItNi44MjhTNi4yMjkgMSAxMCAxaDRjMy43NzEgMCA1LjY1NyAwIDYuODI4IDEuMTcyUzIyIDUuMjI5IDIyIDl2NGMwIDMuNzcxIDAgNS42NTctMS4xNzIgNi44MjhTMTcuNzcxIDIxIDE0IDIxaC00Yy0zLjc3MSAwLTUuNjU3IDAtNi44MjgtMS4xNzJTMiAxNi43NzEgMiAxM3oiLz48L2c+PC9zdmc+" 
+              alt="Comprar" 
+              className="h-5 w-5"
+            />
+            <span className="text-sm">
+              {addingToCart ? 'Procesando...' : 'Comprar y leer'}
+            </span>
+          </button>
+        )}
+        </div>
+      )}
     </div>
   )
 }

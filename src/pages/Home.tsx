@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Star, ArrowRight, BookOpen, Users, Award, Download, Sparkles, Zap } from 'lucide-react'
+import { Icon } from '@iconify/react'
 import { supabase, type Ebook } from '../config/supabase'
 import { getBookCoverImageWithSize } from '../utils/imageOverrides'
 import {
@@ -24,10 +25,10 @@ export default function Home() {
 
   const fetchFeaturedBooks = async () => {
     try {
-        const { data, error } = await supabase
-          .from('ebooks')
-          .select('*')
-          .eq('featured', true)
+      const { data, error } = await supabase
+        .from('ebooks')
+        .select('*')
+        .eq('featured', true)
           .limit(4)
 
       if (error) throw error
@@ -218,7 +219,7 @@ export default function Home() {
                 <div className="text-green-500 font-black text-lg mb-2">Email Marketing 2.0</div>
                 <p className="text-gray-600">Automatización behavioral avanzada</p>
               </div>
-              <div className="text-center">
+            <div className="text-center">
                 <div className="text-blue-500 font-black text-lg mb-2">Growth Hacking</div>
                 <p className="text-gray-600">Escalamiento exponencial comprobado</p>
               </div>
@@ -324,22 +325,26 @@ export default function Home() {
                 {/* Lista simple de compatibilidad */}
                 <div className="space-y-3">
                   {[
-                    "📱 iOS (iPhone, iPad, Mac)",
-                    "🤖 Android (Phones, Tablets)", 
-                    "🌐 Web (Cualquier navegador)",
-                    "📖 E-readers (Kindle, Kobo)"
+                    { text: "iOS (iPhone, iPad, Mac)", icon: "logos:apple" },
+                    { text: "Android (Phones, Tablets)", icon: "logos:android-icon" }, 
+                    { text: "Web (Cualquier navegador)", icon: "material-symbols:web" },
+                    { text: "E-readers (Kindle, Kobo)", icon: "material-symbols:book" }
                   ].map((item, index) => (
                     <div key={index} className="flex items-center p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm text-gray-700">{item}</span>
+                      <Icon icon={item.icon} className="w-5 h-5 mr-3" />
+                      <span className="text-sm text-gray-700">{item.text}</span>
                       <div className="ml-auto">
-                        <span className="text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">✓ Compatible</span>
+                        <span className="text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full flex items-center">
+                          <Icon icon="material-symbols:check-circle" className="w-3 h-3 mr-1" />
+                          Compatible
+                        </span>
                       </div>
                     </div>
                   ))}
                 </div>
 
                 <div className="mt-6 pt-6 border-t border-gray-200">
-                  <div className="text-center">
+            <div className="text-center">
                     <p className="text-sm text-gray-600 mb-3">Formatos: PDF, EPUB, MOBI</p>
                     <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full text-white text-sm font-semibold">
                       <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
@@ -353,108 +358,151 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Books Section - Mobile optimized */}
+      {/* Featured Book Section - El Arte de la Programación */}
       <section className="py-16 sm:py-20 lg:py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
-            <div className="inline-flex items-center px-3 sm:px-4 py-2 rounded-full bg-gradient-to-r from-orange-100 to-red-100 text-orange-800 text-xs sm:text-sm font-medium mb-4 sm:mb-6">
-              <Star className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-orange-500" />
-              Más vendidos
+            <div className="inline-flex items-center px-3 sm:px-4 py-2 rounded-full bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 text-xs sm:text-sm font-medium mb-4 sm:mb-6">
+              <Icon icon="material-symbols:trending-up" className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-blue-500" />
+              #1 Más vendido
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6 px-2">
-              Los ebooks que
-              <span className="bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent"> están transformando negocios</span>
+              El ebook que está
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> transformando negocios</span>
             </h2>
             <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-              Los 4 ebooks más vendidos que están usando emprendedores exitosos en Chile.
+              Descubre el libro más vendido entre emprendedores chilenos que están escalando sus negocios.
             </p>
           </div>
 
           {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10">
-                  {[1, 2, 3, 4].map((i) => (
-                <Card key={i} className="w-full space-y-5 p-3 sm:p-4">
-                  <Skeleton className="rounded-lg">
-                    <div className="h-48 sm:h-64 rounded-lg bg-default-300"></div>
+            <div className="flex justify-center">
+              <Card className="w-full max-w-md space-y-5 p-3 sm:p-4">
+                <Skeleton className="rounded-lg">
+                  <div className="h-96 rounded-lg bg-default-300"></div>
+                </Skeleton>
+                <div className="space-y-3">
+                  <Skeleton className="w-3/5 rounded-lg">
+                    <div className="h-3 w-3/5 rounded-lg bg-default-200"></div>
                   </Skeleton>
-                  <div className="space-y-3">
-                    <Skeleton className="w-3/5 rounded-lg">
-                      <div className="h-3 w-3/5 rounded-lg bg-default-200"></div>
-                    </Skeleton>
-                    <Skeleton className="w-4/5 rounded-lg">
-                      <div className="h-3 w-4/5 rounded-lg bg-default-200"></div>
-                    </Skeleton>
-                    <Skeleton className="w-2/5 rounded-lg">
-                      <div className="h-3 w-2/5 rounded-lg bg-default-300"></div>
-                    </Skeleton>
-                  </div>
-                </Card>
-              ))}
-            </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10">
-              {featuredBooks.map((book, index) => (
-                <div key={book.id} className="group">
-                  <Card className="bg-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500 group-hover:scale-105 overflow-hidden">
-                    <CardBody className="p-0">
-                      <div className="relative overflow-hidden">
-                        <Image
-                          src={getBookCoverImageWithSize(book, 'medium')}
-                          alt={book.title}
-                          className="w-full h-64 sm:h-72 lg:h-80 object-cover group-hover:scale-110 transition-transform duration-700"
-                          radius="none"
-                        />
-                        {/* Overlay gradient */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        
-                        {/* Price badge - Mobile responsive */}
-                        <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
-                          <div className="bg-white/90 backdrop-blur-sm px-2 py-1.5 sm:px-3 sm:py-2 rounded-full text-gray-900 font-bold text-xs sm:text-sm">
-                            ${Math.round(book.price * 800).toLocaleString('es-CL')} CLP
-                          </div>
-                        </div>
-
-                        {/* Ranking badge - Mobile responsive */}
-                        <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
-                          <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs font-bold">
-                            #{index + 1} TRENDING
-                          </div>
-                        </div>
-                      </div>
-                    </CardBody>
-                    <CardFooter className="flex-col items-start p-4 sm:p-6 lg:p-8">
-                      <div className="w-full">
-                        <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-2 group-hover:text-orange-600 transition-colors line-clamp-2">
-                          {book.title}
-                        </h3>
-                        <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4 font-medium">por {book.author}</p>
-                        
-                        {/* Rating - Mobile compact */}
-                        <div className="flex items-center mb-4 sm:mb-6">
-                          <div className="flex items-center">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star key={star} className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400 fill-current" />
-                            ))}
-                          </div>
-                          <span className="text-xs sm:text-sm text-gray-500 ml-2 sm:ml-3 font-medium">(4.8) • 2.1k reseñas</span>
-                        </div>
-                        
-                            {/* CTA Button - Mobile responsive */}
-                            <Button
-                              as={Link}
-                              to={`/libro/${book.id}`}
-                              className="w-full bg-gray-900 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base lg:text-lg hover:bg-gray-800 transition-all duration-300"
-                              radius="full"
-                              size="lg"
-                              endContent={<ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />}
-                            >
-                              Leer ahora
-                            </Button>
-                      </div>
-                    </CardFooter>
-                  </Card>
+                  <Skeleton className="w-4/5 rounded-lg">
+                    <div className="h-3 w-4/5 rounded-lg bg-default-200"></div>
+                  </Skeleton>
+                  <Skeleton className="w-2/5 rounded-lg">
+                    <div className="h-3 w-2/5 rounded-lg bg-default-300"></div>
+                  </Skeleton>
                 </div>
-              ))}
+              </Card>
+            </div>
+          ) : (
+            <div className="flex justify-center">
+              <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl">
+                <Card className="bg-white border-0 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-105 overflow-hidden group">
+                  <CardBody className="p-0">
+                    <div className="relative overflow-hidden">
+                      <img
+                        src="/images/meta-ads-guide.png"
+                        alt="El Arte de la Programación"
+                        className="w-full h-80 sm:h-96 lg:h-[500px] object-cover group-hover:scale-110 transition-transform duration-700"
+                        onError={(e) => {
+                          console.log('Error cargando imagen principal, intentando fallback...')
+                          e.currentTarget.src = '/images/2.png'
+                          e.currentTarget.onerror = () => {
+                            console.log('Error con fallback, usando placeholder')
+                            e.currentTarget.src = 'https://via.placeholder.com/400x600/f3f4f6/9ca3af?text=El+Arte+de+la+Programación'
+                          }
+                        }}
+                      />
+                      {/* Overlay gradient */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      
+                      {/* Price badge */}
+                      <div className="absolute top-4 right-4">
+                        <div className="bg-white/90 backdrop-blur-sm px-3 py-2 rounded-full text-gray-900 font-bold text-sm">
+                          $29.900 CLP
+                        </div>
+                      </div>
+
+                      {/* Best Seller badge */}
+                      <div className="absolute top-4 left-4">
+                        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-2 rounded-full text-xs font-bold flex items-center">
+                          <Icon icon="material-symbols:star" className="w-4 h-4 mr-1" />
+                          #1 BESTSELLER
+                        </div>
+                      </div>
+
+                      {/* Discount badge */}
+                      <div className="absolute bottom-4 right-4">
+                        <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                          40% OFF
+                        </div>
+                      </div>
+                  </div>
+                  </CardBody>
+                  <CardFooter className="flex-col items-start p-6 lg:p-8">
+                    <div className="w-full">
+                          <h3 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
+                            Ebook de la Publicidad
+                          </h3>
+                      <p className="text-base lg:text-lg text-gray-600 mb-4 font-medium">por Carlos López</p>
+                      
+                      {/* Rating */}
+                      <div className="flex items-center mb-6">
+                        <div className="flex items-center">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                            <Star key={star} className="h-5 w-5 text-yellow-400 fill-current" />
+                          ))}
+                        </div>
+                        <span className="text-sm text-gray-500 ml-3 font-medium">(4.9) • 3.2k reseñas</span>
+                      </div>
+
+                      {/* Key features */}
+                      <div className="grid grid-cols-2 gap-3 mb-6">
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Icon icon="material-symbols:schedule" className="w-4 h-4 mr-2 text-blue-500" />
+                          <span>2h de lectura</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Icon icon="material-symbols:download" className="w-4 h-4 mr-2 text-green-500" />
+                          <span>PDF + EPUB</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Icon icon="material-symbols:update" className="w-4 h-4 mr-2 text-purple-500" />
+                          <span>Actualizado 2024</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Icon icon="material-symbols:support" className="w-4 h-4 mr-2 text-orange-500" />
+                          <span>Soporte incluido</span>
+                        </div>
+                  </div>
+                      
+                      {/* CTA Buttons */}
+                      <div className="space-y-3">
+                        <Button
+                          as={Link}
+                          to="/libro/1"
+                          className="w-full bg-blue-600 text-white font-bold py-3 text-lg hover:bg-blue-700 transition-all duration-300"
+                          radius="full"
+                          size="lg"
+                          endContent={<ArrowRight className="h-5 w-5" />}
+                        >
+                          Comprar Ahora
+                        </Button>
+                        <Button
+                          as={Link}
+                          to="/libro/1"
+                          className="w-full bg-blue-600 text-white font-semibold py-3 text-base hover:bg-blue-700 transition-all duration-300"
+                          radius="full"
+                          size="lg"
+                          endContent={<BookOpen className="h-4 w-4" />}
+                        >
+                          Leer
+                        </Button>
+                  </div>
+                </div>
+                  </CardFooter>
+                </Card>
+              </div>
             </div>
           )}
 
@@ -470,7 +518,7 @@ export default function Home() {
                 >
                   Ver más
                 </Button>
-              </div>
+          </div>
         </div>
       </section>
 
@@ -492,7 +540,7 @@ export default function Home() {
               <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent"> aventura</span>
               <br />
               te está esperando
-            </h2>
+          </h2>
             <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/80 mb-8 sm:mb-12 max-w-3xl mx-auto px-4">
               Más de 2,500 lectores chilenos ya han transformado su forma de leer. ¿Te unes a ellos?
             </p>

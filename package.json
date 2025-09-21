@@ -12,6 +12,7 @@
   "dependencies": {
     "@heroui/react": "^2.8.4",
     "@heroui/theme": "^2.4.22",
+    "@iconify/react": "^6.0.2",
     "@stripe/stripe-js": "^2.1.7",
     "@supabase/auth-ui-react": "^0.4.6",
     "@supabase/auth-ui-shared": "^0.1.6",

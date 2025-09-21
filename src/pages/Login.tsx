@@ -4,6 +4,7 @@ import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { supabase } from '../config/supabase'
 import { BookOpen } from 'lucide-react'
+import { Icon } from '@iconify/react'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -61,7 +62,7 @@ export default function Login() {
       if (error) {
         // Manejo específico de errores comunes
         if (error.message.includes('User already registered')) {
-          setError('⚠️ Este correo ya está registrado. Intenta iniciar sesión o usa otro correo.')
+          setError('Este correo ya está registrado. Intenta iniciar sesión o usa otro correo.')
         } else if (error.message.includes('Invalid email')) {
           setError('📧 Por favor ingresa un correo electrónico válido.')
         } else if (error.message.includes('Password should be at least')) {
@@ -72,7 +73,7 @@ export default function Login() {
           setError('❌ Error: ' + error.message)
         }
       } else {
-        setSuccess('✅ ¡Cuenta creada exitosamente! Revisa tu correo para confirmar tu cuenta.')
+        setSuccess('¡Cuenta creada exitosamente! Revisa tu correo para confirmar tu cuenta.')
         // Limpiar formulario después de éxito
         setFormData({
           email: '',
@@ -247,7 +248,9 @@ export default function Login() {
 
                 <div>
                   <label htmlFor="age" className="block text-sm font-medium text-gray-700">
-                    Edad ⭐
+                    <span className="flex items-center">
+                      Edad <Icon icon="material-symbols:star" className="w-4 h-4 ml-1 text-yellow-500" />
+                    </span>
                   </label>
                   <input
                     id="age"

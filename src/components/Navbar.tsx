@@ -1,6 +1,7 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { ShoppingCart, User, LogOut, BookOpen, Settings, Menu, X } from 'lucide-react'
+import { Icon } from '@iconify/react'
 import { supabase } from '../config/supabase'
+import { useCartCount } from '../hooks/useCartCount'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import toast from 'react-hot-toast'
 import { useState, useEffect } from 'react'
@@ -14,6 +15,18 @@ export default function Navbar({ user }: NavbarProps) {
   const location = useLocation()
   const [showDropdown, setShowDropdown] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const cartCount = useCartCount(user)
+
+  // Detectar scroll para efectos visuales
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20)
+    }
+    
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   // Cerrar dropdown cuando se hace clic fuera
   useEffect(() => {
@@ -39,100 +52,129 @@ export default function Navbar({ user }: NavbarProps) {
   }
 
   const menuItems = [
-    { name: "Inicio", href: "/" },
-    { name: "Catálogo", href: "/catalogo" },
+    { name: "Inicio", href: "/", icon: "material-symbols:home-rounded" },
+    { name: "Catálogo", href: "/catalogo", icon: "material-symbols:library-books" },
   ]
 
   const isActive = (path: string) => location.pathname === path
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      isScrolled 
+        ? 'bg-white/95 backdrop-blur-lg shadow-lg border-b border-gray-200/50' 
+        : 'bg-white/90 backdrop-blur-md border-b border-gray-200/30'
+    }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <BookOpen className="h-8 w-8 text-primary-600" />
-            <span className="text-xl font-bold text-gray-900">BookStore</span>
+          {/* Logo mejorado */}
+          <Link to="/" className="flex items-center space-x-3 group">
+            <div className={`transition-all duration-300 ${
+              isScrolled ? 'scale-95' : 'scale-100'
+            }`}>
+              <Icon 
+                icon="material-symbols:book-outline" 
+                className="h-8 w-8 text-gray-900 group-hover:text-gray-700 transition-colors"
+              />
+            </div>
+                <span className="text-xl font-medium text-gray-900 group-hover:text-gray-700 transition-colors">
+                  BookStore
+                </span>
           </Link>
 
-          {/* Enlaces de navegación */}
-          <div className="hidden md:flex items-center space-x-8">
+          {/* Enlaces de navegación mejorados */}
+          <div className="hidden md:flex items-center space-x-2">
             {menuItems.map((item) => (
               <Link 
                 key={item.name}
                 to={item.href}
-                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-semibold transition-all duration-200 ${
                   isActive(item.href)
-                    ? 'text-primary-600 border-b-2 border-primary-600'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'bg-gray-900 text-white shadow-md'
+                    : 'text-gray-800 hover:text-gray-900 hover:bg-gray-100'
                 }`}
               >
-                {item.name}
+                <Icon icon={item.icon} className="h-5 w-5" />
+                <span>{item.name}</span>
               </Link>
             ))}
           </div>
 
-          {/* Acciones del usuario */}
-          <div className="flex items-center space-x-4">
+          {/* Acciones del usuario mejoradas */}
+          <div className="flex items-center space-x-3">
             {user ? (
               <>
-                <Link 
-                  to="/carrito" 
-                  className="relative text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <ShoppingCart className="h-6 w-6 text-red-500" />
-                  {/* Badge opcional para número de items */}
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    3
-                  </span>
-                </Link>
+                {/* Carrito oculto para landing page */}
                 
+                {/* Menú de usuario */}
                 <div className="relative">
                   <button 
                     onClick={(e) => {
                       e.stopPropagation()
                       setShowDropdown(!showDropdown)
                     }}
-                    className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="flex items-center space-x-2 p-2 rounded-xl hover:bg-gray-100 transition-all duration-200 group"
                   >
-                    <div className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center">
-                      <User className="h-5 w-5" />
-                    </div>
-                    <span className="hidden md:block text-sm font-medium">
+                        <img 
+                          src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48Y2lyY2xlIGN4PSIxMiIgY3k9IjYiIHI9IjQiIGZpbGw9ImN1cnJlbnRDb2xvciIvPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTE4LjA5NSAxNS4wMzFDMTcuNjcgMTUgMTcuMTQ5IDE1IDE2LjUgMTVjLTEuNjUgMC0yLjQ3NSAwLTIuOTg3LjUxM0MxMyAxNi4wMjUgMTMgMTYuODUgMTMgMTguNWMwIDEuMTY2IDAgMS45Mi4xODEgMi40NDNRMTIuNjA1IDIxIDEyIDIxYy0zLjg2NiAwLTctMS43OS03LTRzMy4xMzQtNCA3LTRjMi42MTMgMCA0Ljg5Mi44MTggNi4wOTUgMi4wMzEiIG9wYWNpdHk9IjAuNSIvPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNMTMuNTEzIDIxLjQ4N0MxNC4wMjUgMjIgMTQuODUgMjIgMTYuNSAyMnMyLjQ3NSAwIDIuOTg3LS41MTNDMjAgMjAuOTc1IDIwIDIwLjE1IDIwIDE4LjVzMC0yLjQ3NS0uNTEzLTIuOTg3QzE4Ljk3NSAxNSAxOC4xNSAxNSAxNi41IDE1cy0yLjQ3NSAwLTIuOTg3LjUxM0MxMyAxNi4wMjUgMTMgMTYuODUgMTMgMTguNXMwIDIuNDc1LjUxMyAyLjk4N20yLjAxNC0xLjUxQzE0LjgyNSAxOS40NzQgMTQgMTguODgzIDE0IDE3Ljg2YzAtMS4xMyAxLjM3NS0xLjkzMSAyLjUtLjg0NWMxLjEyNS0xLjA4NyAyLjUtLjI4NSAyLjUuODQ1YzAgMS4wMjMtLjgyNSAxLjYxNC0xLjUyNyAyLjExN2wtLjIxMy4xNTRjLS4yNi4xOS0uNTEuMzY5LS43Ni4zNjlzLS41LS4xOC0uNzYtLjM3eiIgY2xpcC1ydWxlPSJldmVub2RkIi8+PC9zdmc+" 
+                          alt="Usuario" 
+                          className="h-6 w-6"
+                        />
+                    <span className="hidden md:block text-sm font-semibold text-gray-800 group-hover:text-gray-900">
                       {user.email?.split('@')[0]}
                     </span>
+                    <Icon 
+                      icon="material-symbols:keyboard-arrow-down" 
+                      className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${
+                        showDropdown ? 'rotate-180' : ''
+                      }`}
+                    />
                   </button>
                   
-                  {/* Dropdown menu */}
+                  {/* Dropdown menu mejorado */}
                   {showDropdown && (
                     <div 
                       onClick={(e) => e.stopPropagation()}
-                      className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10"
+                      className="absolute right-0 mt-2 w-56 bg-white/95 backdrop-blur-lg rounded-xl shadow-xl border border-gray-200/50 z-20 overflow-hidden"
                     >
-                      <div className="py-1">
+                      <div className="py-2">
+                        <div className="px-4 py-3 border-b border-gray-100">
+                          <p className="text-sm font-medium text-gray-900">
+                            {user.email?.split('@')[0]}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {user.email}
+                          </p>
+                        </div>
+                        
                         <Link 
                           to="/perfil" 
                           onClick={() => setShowDropdown(false)}
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         >
-                          <User className="h-4 w-4 mr-2" />
+                          <img 
+                            src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48Y2lyY2xlIGN4PSIxMiIgY3k9IjYiIHI9IjQiIGZpbGw9ImN1cnJlbnRDb2xvciIvPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTE4LjA5NSAxNS4wMzFDMTcuNjcgMTUgMTcuMTQ5IDE1IDE2LjUgMTVjLTEuNjUgMC0yLjQ3NSAwLTIuOTg3LjUxM0MxMyAxNi4wMjUgMTMgMTYuODUgMTMgMTguNWMwIDEuMTY2IDAgMS45Mi4xODEgMi40NDNRMTIuNjA1IDIxIDEyIDIxYy0zLjg2NiAwLTctMS43OS03LTRzMy4xMzQtNCA3LTRjMi42MTMgMCA0Ljg5Mi44MTggNi4wOTUgMi4wMzEiIG9wYWNpdHk9IjAuNSIvPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNMTMuNTEzIDIxLjQ4N0MxNC4wMjUgMjIgMTQuODUgMjIgMTYuNSAyMnMyLjQ3NSAwIDIuOTg3LS41MTNDMjAgMjAuOTc1IDIwIDIwLjE1IDIwIDE4LjVzMC0yLjQ3NS0uNTEzLTIuOTg3QzE4Ljk3NSAxNSAxOC4xNSAxNSAxNi41IDE1cy0yLjQ3NSAwLTIuOTg3LjUxM0MxMyAxNi4wMjUgMTMgMTYuODUgMTMgMTguNXMwIDIuNDc1LjUxMyAyLjk4N20yLjAxNC0xLjUxQzE0LjgyNSAxOS40NzQgMTQgMTguODgzIDE0IDE3Ljg2YzAtMS4xMyAxLjM3NS0xLjkzMSAyLjUtLjg0NWMxLjEyNS0xLjA4NyAyLjUtLjI4NSAyLjUuODQ1YzAgMS4wMjMtLjgyNSAxLjYxNC0xLjUyNyAyLjExN2wtLjIxMy4xNTRjLS4yNi4xOS0uNTEuMzY5LS43Ni4zNjlzLS41LS4xOC0uNzYtLjM3eiIgY2xpcC1ydWxlPSJldmVub2RkIi8+PC9zdmc+" 
+                            alt="Usuario" 
+                            className="h-5 w-5 mr-3"
+                          />
                           Mi Perfil
                         </Link>
                         <Link 
                           to="/admin" 
                           onClick={() => setShowDropdown(false)}
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         >
-                          <Settings className="h-4 w-4 mr-2" />
+                          <Icon icon="material-symbols:admin-panel-settings-outline" className="h-5 w-5 mr-3" />
                           Administración
                         </Link>
-                        <button 
-                          onClick={handleLogout}
-                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <LogOut className="h-4 w-4 mr-2" />
-                          Cerrar Sesión
-                        </button>
+                        <div className="border-t border-gray-100 mt-1">
+                          <button 
+                            onClick={handleLogout}
+                            className="flex items-center w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            <Icon icon="material-symbols:logout" className="h-5 w-5 mr-3" />
+                            Cerrar Sesión
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -141,59 +183,18 @@ export default function Navbar({ user }: NavbarProps) {
             ) : (
               <Link 
                 to="/login" 
-                className="btn-primary"
+                className="flex items-center space-x-2 bg-gray-900 hover:bg-gray-800 text-white font-semibold px-6 py-2 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
               >
-                Iniciar Sesión
+                <Icon icon="material-symbols:login" className="h-5 w-5" />
+                <span>Iniciar Sesión</span>
               </Link>
             )}
 
-            {/* Mobile menu button */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
-            </button>
+            {/* Menú móvil oculto para landing page */}
           </div>
         </div>
 
-        {/* Mobile Navigation */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200">
-            <div className="px-4 py-4 space-y-2">
-              {menuItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`block px-4 py-3 rounded-lg font-medium transition-colors ${
-                    isActive(item.href)
-                      ? 'bg-primary-600 text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              ))}
-              
-              {!user && (
-                <div className="pt-4 border-t border-gray-200">
-                  <Link 
-                    to="/login" 
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block w-full bg-primary-600 text-white font-semibold py-3 text-center rounded-lg"
-                  >
-                    Iniciar Sesión
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {/* Navegación móvil oculta para landing page */}
       </div>
     </nav>
   )
