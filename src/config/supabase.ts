@@ -25,6 +25,7 @@ export interface User {
   email: string
   full_name?: string
   avatar_url?: string
+  age?: number
   created_at: string
 }
 

@@ -101,6 +101,19 @@ export default function Login() {
                 },
               },
             }}
+            additionalData={[
+              {
+                key: 'age',
+                label: 'Edad',
+                placeholder: 'Ingresa tu edad',
+                type: 'number'
+              },
+              {
+                key: 'full_name',
+                label: 'Nombre completo',
+                placeholder: 'Tu nombre completo'
+              }
+            ]}
             providers={['google', 'github']}
             redirectTo={`${window.location.origin}/`}
           />
