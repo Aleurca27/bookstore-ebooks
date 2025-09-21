@@ -12,7 +12,8 @@ export default function Login() {
     email: '',
     password: '',
     fullName: '',
-    age: ''
+    age: '',
+    gender: ''
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -51,7 +52,8 @@ export default function Login() {
         options: {
           data: {
             full_name: formData.fullName,
-            age: formData.age
+            age: formData.age,
+            gender: formData.gender
           }
         }
       })
@@ -76,7 +78,8 @@ export default function Login() {
           email: '',
           password: '',
           fullName: '',
-          age: ''
+          age: '',
+          gender: ''
         })
         // Opcional: volver al formulario normal después de 3 segundos
         setTimeout(() => {
@@ -257,6 +260,25 @@ export default function Login() {
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                     placeholder="Ej: 25"
                   />
+                </div>
+
+                <div>
+                  <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
+                    Género 👤
+                  </label>
+                  <select
+                    id="gender"
+                    required
+                    value={formData.gender}
+                    onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  >
+                    <option value="">Selecciona tu género</option>
+                    <option value="masculino">Masculino</option>
+                    <option value="femenino">Femenino</option>
+                    <option value="otro">Otro</option>
+                    <option value="no_decir">Prefiero no decir</option>
+                  </select>
                 </div>
 
                 <button

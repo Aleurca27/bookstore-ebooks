@@ -2,6 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Estilos para el lector de ebooks */
+.reader-content {
+  max-width: none;
+}
+
+.reader-content h1, .reader-content h2 {
+  @apply text-3xl font-bold mb-6 mt-8 leading-tight;
+}
+
+.reader-content h3 {
+  @apply text-2xl font-semibold mb-4 mt-6;
+}
+
+.reader-content h4 {
+  @apply text-xl font-semibold mb-3 mt-5;
+}
+
+.reader-content p {
+  @apply mb-4 leading-relaxed;
+}
+
+.reader-content ul, .reader-content ol {
+  @apply mb-4 pl-6;
+}
+
+.reader-content li {
+  @apply mb-2;
+}
+
+.reader-content blockquote {
+  @apply border-l-4 border-blue-500 pl-4 my-6 italic;
+}
+
+.reader-content .action-box, 
+.reader-content .template-box, 
+.reader-content .case-study-box, 
+.reader-content .tip-box {
+  @apply bg-gray-50 border border-gray-200 rounded-xl p-6 my-8;
+}
+
+.dark .reader-content .action-box, 
+.dark .reader-content .template-box, 
+.dark .reader-content .case-study-box, 
+.dark .reader-content .tip-box {
+  @apply bg-gray-800 border-gray-700;
+}
+
+.reader-content strong {
+  @apply font-semibold;
+}
+
 @layer base {
   html {
     font-family: 'Inter', system-ui, sans-serif;

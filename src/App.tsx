@@ -9,6 +9,7 @@ import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import Catalog from './pages/Catalog'
 import EbookDetail from './pages/EbookDetail'
+import EbookReader from './pages/EbookReader'
 import Login from './pages/Login'
 import Profile from './pages/Profile'
 import Admin from './pages/Admin'
@@ -53,6 +54,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/catalogo" element={<Catalog />} />
             <Route path="/libro/:id" element={<EbookDetail user={user} />} />
+            <Route path="/leer/:id" element={<EbookReader user={user} />} />
             <Route path="/login" element={<Login />} />
             <Route path="/perfil" element={<Profile user={user} />} />
             <Route path="/carrito" element={<Cart user={user} />} />
