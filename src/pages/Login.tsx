@@ -15,6 +15,8 @@ export default function Login() {
     age: ''
   })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
   useEffect(() => {
     // Verificar si el usuario ya está autenticado
@@ -39,6 +41,8 @@ export default function Login() {
   const handleCustomSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError('')
+    setSuccess('')
 
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -53,13 +57,36 @@ export default function Login() {
       })
 
       if (error) {
-        alert('Error: ' + error.message)
+        // Manejo específico de errores comunes
+        if (error.message.includes('User already registered')) {
+          setError('⚠️ Este correo ya está registrado. Intenta iniciar sesión o usa otro correo.')
+        } else if (error.message.includes('Invalid email')) {
+          setError('📧 Por favor ingresa un correo electrónico válido.')
+        } else if (error.message.includes('Password should be at least')) {
+          setError('🔒 La contraseña debe tener al menos 6 caracteres.')
+        } else if (error.message.includes('Signup is disabled')) {
+          setError('🚫 El registro está temporalmente deshabilitado.')
+        } else {
+          setError('❌ Error: ' + error.message)
+        }
       } else {
-        alert('¡Cuenta creada! Revisa tu correo para confirmar tu cuenta.')
-        setShowCustomForm(false)
+        setSuccess('✅ ¡Cuenta creada exitosamente! Revisa tu correo para confirmar tu cuenta.')
+        // Limpiar formulario después de éxito
+        setFormData({
+          email: '',
+          password: '',
+          fullName: '',
+          age: ''
+        })
+        // Opcional: volver al formulario normal después de 3 segundos
+        setTimeout(() => {
+          setShowCustomForm(false)
+          setSuccess('')
+        }, 3000)
       }
     } catch (error) {
-      alert('Error inesperado: ' + error)
+      setError('💥 Error inesperado. Por favor intenta nuevamente.')
+      console.error('Error de registro:', error)
     } finally {
       setLoading(false)
     }
@@ -155,6 +182,18 @@ export default function Login() {
           ) : (
             <>
               <form onSubmit={handleCustomSignUp} className="space-y-6">
+                {/* Mensajes de error y éxito */}
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+                    {error}
+                  </div>
+                )}
+                {success && (
+                  <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md text-sm">
+                    {success}
+                  </div>
+                )}
+                
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                     Correo electrónico
@@ -164,7 +203,10 @@ export default function Login() {
                     type="email"
                     required
                     value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    onChange={(e) => {
+                      setFormData({...formData, email: e.target.value})
+                      if (error) setError('') // Limpiar error al escribir
+                    }}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                     placeholder="tu@email.com"
                   />
