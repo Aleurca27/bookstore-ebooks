@@ -142,9 +142,9 @@ export default function Navbar({ user }: NavbarProps) {
             <Button 
               as={Link} 
               to="/login" 
-              color="default" 
+              color="secondary" 
               variant="solid"
-              className="font-medium bg-black text-white hover:bg-gray-800"
+              className="font-medium"
             >
               Iniciar Sesión
             </Button>
