@@ -15,6 +15,9 @@ import Profile from './pages/Profile'
 import Admin from './pages/Admin'
 import Cart from './pages/Cart'
 import PaymentConfirmation from './pages/PaymentConfirmation'
+import PaymentSuccess from './pages/PaymentSuccess'
+import PaymentFailure from './pages/PaymentFailure'
+import PaymentPending from './pages/PaymentPending'
 
 function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -57,9 +60,12 @@ function App() {
             <Route path="/leer/:id" element={<EbookReader user={user} />} />
             <Route path="/login" element={<Login />} />
             <Route path="/perfil" element={<Profile user={user} />} />
-            <Route path="/carrito" element={<Cart user={user} />} />
-            <Route path="/admin" element={<Admin user={user} />} />
-            <Route path="/payment/confirmation" element={<PaymentConfirmation />} />
+                <Route path="/carrito" element={<Cart user={user} />} />
+                <Route path="/admin" element={<Admin user={user} />} />
+                <Route path="/payment/confirmation" element={<PaymentConfirmation />} />
+                <Route path="/payment/success" element={<PaymentSuccess />} />
+                <Route path="/payment/failure" element={<PaymentFailure />} />
+                <Route path="/payment/pending" element={<PaymentPending />} />
           </Routes>
         </main>
         <Toaster position="top-right" />

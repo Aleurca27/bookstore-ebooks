@@ -2,7 +2,7 @@
 export const getBookCoverImage = (book: { title: string; cover_image: string }) => {
   // Mapeo de títulos a imágenes locales
   const localImageOverrides: { [key: string]: string } = {
-    'El Arte de la Programación': '/images/2.png',
+    'El Arte de la Programación': '/images/meta-ads-guide.png',
     // Puedes agregar más sobrescrituras aquí:
     // 'Otro Libro': '/images/otro-libro.png',
   }

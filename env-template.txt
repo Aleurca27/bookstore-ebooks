@@ -1,0 +1,21 @@
+# Variables de entorno para el proyecto de Ebooks
+# Copiar este contenido a un archivo .env.local
+
+# Supabase Configuration
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# MercadoPago Configuration
+MERCADOPAGO_ACCESS_TOKEN=your_mercadopago_access_token
+MERCADOPAGO_PUBLIC_KEY=APP_USR-c2104a09-00e7-4e07-8475-8bf44ed7a4a0
+MERCADOPAGO_CLIENT_ID=7433295818776236
+MERCADOPAGO_CLIENT_SECRET=bqx1R0XRJbe1qgYJoeXCF3lh3dcFu39j
+
+# Environment
+NODE_ENV=development
+VERCEL_URL=http://localhost:3000
+
+# WebPay Configuration (opcional, para futuro uso)
+WEBPAY_COMMERCE_CODE=your_webpay_commerce_code
+WEBPAY_API_KEY=your_webpay_api_key
+WEBPAY_ENVIRONMENT=integration
