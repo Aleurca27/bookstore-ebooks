@@ -201,15 +201,15 @@ export default function EbookDetail({ user }: EbookDetailProps) {
     }
   }
 
-  const downloadBook = async () => {
-    if (!book?.file_url) {
-      toast.error('Archivo no disponible')
+  const goToReader = async () => {
+    if (!book) {
+      toast.error('Información del libro no disponible')
       return
     }
 
-    // Simular descarga del archivo
-    toast.success('Iniciando descarga...')
-    // En una implementación real, aquí descargarías el archivo desde Supabase Storage
+    // Redirigir al lector del libro
+    toast.success('Abriendo lector...')
+    navigate(`/leer/${book.id}`)
   }
 
   const toggleChapter = (chapterIndex: number) => {
@@ -250,32 +250,32 @@ export default function EbookDetail({ user }: EbookDetailProps) {
     )
   }
 
-    return (
+  return (
       <div className="min-h-screen bg-white overflow-x-hidden">
         {/* Hero Section del libro */}
         <section className="bg-gradient-to-br from-gray-50 to-gray-100 py-12 mt-8">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
-              {/* Imagen del libro */}
+          {/* Imagen del libro */}
               <div className="flex justify-center lg:justify-start">
                 <div className="w-full max-w-md md:max-w-lg lg:max-w-xl bg-white border border-gray-200 rounded-xl overflow-hidden">
-                  <img
+              <img
                     src={getBookCoverImageWithSize(book, 'large')}
-                    alt={book.title}
+                alt={book.title}
                     className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
+              />
+            </div>
+          </div>
 
               {/* Información principal */}
               <div className="space-y-4 text-center lg:text-left">
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-gray-900 leading-tight">
-                  {book.title}
-                </h1>
+                {book.title}
+              </h1>
 
                 <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start space-y-2 sm:space-y-0 sm:space-x-4">
-                  <div className="flex items-center">
-                    {[1, 2, 3, 4, 5].map((star) => (
+                <div className="flex items-center">
+                  {[1, 2, 3, 4, 5].map((star) => (
                       <Star key={star} className="h-4 w-4 text-yellow-400 fill-current" />
                     ))}
                     <span className="text-gray-700 ml-2 text-sm font-medium">(4.8)</span>
@@ -285,23 +285,23 @@ export default function EbookDetail({ user }: EbookDetailProps) {
                     <Users className="h-4 w-4 mr-1" />
                     <span>2,147 lectores</span>
                   </div>
-                </div>
+            </div>
 
                 <p className="text-base md:text-lg text-gray-700 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                  {book.description}
-                </p>
+                {book.description}
+              </p>
 
-                <div className="border-t border-gray-200 pt-6">
+            <div className="border-t border-gray-200 pt-6">
                   <div className="mb-6">
                     <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start space-y-2 sm:space-y-0 sm:space-x-3">
                       <span className="text-lg text-gray-500 line-through">$50.000 CLP</span>
                       <span className="text-3xl md:text-4xl font-black text-gray-900">$29.900 CLP</span>
-                    </div>
+                </div>
                     <p className="text-gray-500 text-center lg:text-left mt-2">Acceso de por vida • Descuento por tiempo limitado</p>
-                  </div>
+              </div>
 
-                  <div className="space-y-4">
-                    {isPurchased ? (
+              <div className="space-y-4">
+                {isPurchased ? (
                       <div className="space-y-3">
                         <button
                           onClick={() => navigate(`/leer/${book.id}`)}
@@ -310,13 +310,13 @@ export default function EbookDetail({ user }: EbookDetailProps) {
                           <BookOpen className="h-6 w-6" />
                           <span className="text-lg">Leer ahora</span>
                         </button>
-                        <button
-                          onClick={downloadBook}
+                  <button
+                          onClick={goToReader}
                           className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-xl flex items-center justify-center space-x-3 transition-all duration-300 shadow-lg"
-                        >
-                          <Download className="h-6 w-6" />
-                          <span className="text-lg">Descargar PDF</span>
-                        </button>
+                  >
+                          <BookOpen className="h-6 w-6" />
+                          <span className="text-lg">Abrir Lector</span>
+                  </button>
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -330,26 +330,26 @@ export default function EbookDetail({ user }: EbookDetailProps) {
                             {addingToCart ? 'Procesando...' : 'Comprar y leer ahora'}
                           </span>
                         </button>
-                        <button
-                          onClick={addToCart}
-                          disabled={addingToCart || !user}
+                    <button
+                      onClick={addToCart}
+                      disabled={addingToCart || !user}
                           className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold py-4 px-8 rounded-xl flex items-center justify-center space-x-3 transition-all duration-300 border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <ShoppingCart className="h-6 w-6" />
                           <span className="text-lg">Añadir al carrito</span>
-                        </button>
+                    </button>
                       </div>
-                    )}
+                )}
 
-                    {!user && (
-                      <p className="text-sm text-gray-600 text-center">
+                {!user && (
+                  <p className="text-sm text-gray-600 text-center">
                         <Link to="/login" className="text-orange-600 hover:text-orange-700 font-medium">
-                          Inicia sesión
-                        </Link>{' '}
-                        para comprar este libro
-                      </p>
-                    )}
-                  </div>
+                      Inicia sesión
+                    </Link>{' '}
+                    para comprar este libro
+                  </p>
+                )}
+              </div>
                 </div>
               </div>
             </div>
@@ -791,8 +791,8 @@ export default function EbookDetail({ user }: EbookDetailProps) {
             <p className="text-lg text-gray-600">
               Valorados en más de $89.000 CLP, gratis con tu compra
             </p>
-          </div>
-          
+            </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Bono 1 */}
             <div className="bg-white border border-gray-200 p-6 rounded-xl hover:shadow-lg transition-shadow">
@@ -1069,10 +1069,10 @@ export default function EbookDetail({ user }: EbookDetailProps) {
                 <a href="#" className="text-gray-400 hover:text-white transition-colors">
                   <span className="text-lg">💼</span>
                 </a>
-              </div>
             </div>
           </div>
         </div>
+      </div>
       </footer>
     </div>
   )

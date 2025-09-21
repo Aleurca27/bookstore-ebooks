@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { User, Mail, Calendar, Download, Book } from 'lucide-react'
+import { User, Mail, Calendar, BookOpen, Book } from 'lucide-react'
 import { supabase, type Ebook } from '../config/supabase'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -52,10 +52,9 @@ export default function Profile({ user }: ProfileProps) {
     }
   }
 
-  const downloadBook = (book: Ebook) => {
-    // Simular descarga
-    console.log(`Downloading ${book.title}`)
-    // En una implementación real, aquí descargarías el archivo desde Supabase Storage
+  const openReader = (book: Ebook) => {
+    // Redirigir al lector del libro
+    window.location.href = `/leer/${book.id}`
   }
 
   if (!user) {
@@ -185,11 +184,11 @@ export default function Profile({ user }: ProfileProps) {
 
                       <div className="flex flex-col space-y-2">
                         <button
-                          onClick={() => downloadBook(purchase.ebook)}
+                          onClick={() => openReader(purchase.ebook)}
                           className="btn-primary text-sm flex items-center space-x-2"
                         >
-                          <Download className="h-4 w-4" />
-                          <span>Descargar</span>
+                          <BookOpen className="h-4 w-4" />
+                          <span>Abrir Lector</span>
                         </button>
                         <Link
                           to={`/libro/${purchase.ebook.id}`}
