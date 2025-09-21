@@ -1,9 +1,16 @@
--- Agregar campo 'age' a la tabla profiles
--- Ejecutar este script en el SQL Editor de Supabase
+-- Script de actualización para agregar campo 'age' a bases de datos existentes
+-- Ejecutar este script SOLO si tu base de datos ya existe y no tiene el campo age
 
--- Agregar columna age
-ALTER TABLE profiles 
-ADD COLUMN age INTEGER;
+-- Agregar columna age SOLO si no existe
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'profiles' AND column_name = 'age'
+    ) THEN
+        ALTER TABLE profiles ADD COLUMN age INTEGER;
+    END IF;
+END $$;
 
 -- Actualizar la función handle_new_user para incluir age
 CREATE OR REPLACE FUNCTION public.handle_new_user()
