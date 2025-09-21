@@ -11,3 +11,4 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </HeroUIProvider>
   </React.StrictMode>,
 )
+// Forzar actualización Sun Sep 21 01:56:10 -03 2025
