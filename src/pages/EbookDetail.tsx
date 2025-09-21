@@ -171,8 +171,8 @@ export default function EbookDetail({ user }: EbookDetailProps) {
       const preference = await MercadoPagoService.createPaymentPreference(paymentData)
       console.log('Preferencia de MercadoPago creada:', preference)
       
-      // Determinar URL de pago (sandbox para desarrollo)
-      const paymentUrl = preference.sandbox_init_point || preference.init_point
+      // Determinar URL de pago (producción para pagos reales)
+      const paymentUrl = preference.init_point || preference.sandbox_init_point
       console.log('URL de pago:', paymentUrl)
 
       if (!paymentUrl) {
