@@ -232,3 +232,4 @@ export default function Navbar({ user }: NavbarProps) {
     </nav>
   )
 }
+// FORCE UPDATE Sun Sep 21 02:00:43 -03 2025

@@ -18,6 +18,7 @@ export default function EbookDetail({ user }: EbookDetailProps) {
   const [addingToCart, setAddingToCart] = useState(false)
   const [isPurchased, setIsPurchased] = useState(false)
   const [expandedChapter, setExpandedChapter] = useState<number | null>(null)
+  // Force update timestamp: ${new Date().toISOString()}
 
   useEffect(() => {
     if (id) {
