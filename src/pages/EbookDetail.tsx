@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Star, ShoppingCart, Download, ArrowLeft, Heart } from 'lucide-react'
 import { supabase, type Ebook } from '../config/supabase'
+import { getBookCoverImageWithSize } from '../utils/imageOverrides'
 import type { User } from '@supabase/supabase-js'
 import toast from 'react-hot-toast'
 
@@ -160,7 +161,7 @@ export default function EbookDetail({ user }: EbookDetailProps) {
           <div className="flex justify-center">
             <div className="max-w-md">
               <img
-                src={book.cover_image || 'https://via.placeholder.com/400x600'}
+                src={getBookCoverImageWithSize(book, 'large')}
                 alt={book.title}
                 className="w-full h-auto rounded-lg shadow-lg"
               />

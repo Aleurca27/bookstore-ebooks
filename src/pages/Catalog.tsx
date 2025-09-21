@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, Filter, Star } from 'lucide-react'
 import { supabase, type Ebook } from '../config/supabase'
+import { getBookCoverImageWithSize } from '../utils/imageOverrides'
 
 export default function Catalog() {
   const [books, setBooks] = useState<Ebook[]>([])
@@ -189,7 +190,7 @@ export default function Catalog() {
               <div key={book.id} className="card hover:shadow-lg transition-shadow group">
                 <div className="mb-4 overflow-hidden rounded-lg">
                   <img
-                    src={book.cover_image || 'https://via.placeholder.com/300x400'}
+                    src={getBookCoverImageWithSize(book, 'medium')}
                     alt={book.title}
                     className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
                   />

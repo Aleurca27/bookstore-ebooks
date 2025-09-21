@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Star, ArrowRight, BookOpen, Users, Award } from 'lucide-react'
 import { supabase, type Ebook } from '../config/supabase'
+import { getBookCoverImageWithSize } from '../utils/imageOverrides'
 import {
   Button,
   Card,
@@ -169,7 +170,7 @@ export default function Home() {
                   <CardBody className="p-0">
                     <div className="relative">
                       <Image
-                        src={book.cover_image || 'https://via.placeholder.com/300x400?text=Libro'}
+                        src={getBookCoverImageWithSize(book, 'medium')}
                         alt={book.title}
                         className="w-full h-64 object-cover"
                         radius="lg"
