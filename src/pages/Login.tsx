@@ -8,7 +8,8 @@ import { Icon } from '@iconify/react'
 
 export default function Login() {
   const navigate = useNavigate()
-  const [showCustomForm, setShowCustomForm] = useState(false)
+  const [showCustomForm, setShowCustomForm] = useState(true)
+  const [isLoginMode, setIsLoginMode] = useState(true) // Nuevo estado para alternar entre login y registro
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -39,6 +40,36 @@ export default function Login() {
 
     return () => subscription.unsubscribe()
   }, [navigate])
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      })
+
+      if (error) {
+        setError(error.message)
+        return
+      }
+
+      if (data.user) {
+        setSuccess('¡Inicio de sesión exitoso!')
+        setTimeout(() => {
+          navigate('/')
+        }, 1000)
+      }
+    } catch (error: any) {
+      setError(error.message || 'Error al iniciar sesión')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleCustomSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -103,13 +134,17 @@ export default function Login() {
           <BookOpen className="h-12 w-12 text-primary-600" />
         </div>
         <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-          Accede a tu cuenta
+          {isLoginMode ? 'Accede a tu cuenta' : 'Crea tu cuenta'}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          O{' '}
-          <span className="font-medium text-primary-600">
-            crea una cuenta nueva para comenzar
-          </span>
+          {isLoginMode ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}{' '}
+          <button
+            type="button"
+            onClick={() => setIsLoginMode(!isLoginMode)}
+            className="font-medium text-primary-600 hover:text-primary-500 cursor-pointer"
+          >
+            {isLoginMode ? 'Regístrate aquí' : 'Inicia sesión aquí'}
+          </button>
         </p>
       </div>
 
@@ -171,21 +206,39 @@ export default function Login() {
                     },
                   },
                 }}
-                providers={['google', 'github']}
+                providers={[]}
                 redirectTo={`${window.location.origin}/`}
               />
-              <div className="mt-4 text-center">
-                <button
-                  onClick={() => setShowCustomForm(true)}
-                  className="text-sm font-medium text-primary-600 hover:text-primary-500"
-                >
-                  📝 Registro completo con edad
-                </button>
-              </div>
             </>
           ) : (
             <>
-              <form onSubmit={handleCustomSignUp} className="space-y-6">
+              {/* Toggle entre Login y Registro */}
+              <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
+                <button
+                  type="button"
+                  onClick={() => setIsLoginMode(true)}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    isLoginMode
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Iniciar Sesión
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsLoginMode(false)}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    !isLoginMode
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Crear Cuenta
+                </button>
+              </div>
+
+              <form onSubmit={isLoginMode ? handleLogin : handleCustomSignUp} className="space-y-6">
                 {/* Mensajes de error y éxito */}
                 {error && (
                   <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
@@ -225,82 +278,94 @@ export default function Login() {
                     type="password"
                     required
                     value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    onChange={(e) => {
+                      setFormData({...formData, password: e.target.value})
+                      if (error) setError('') // Limpiar error al escribir
+                    }}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder={isLoginMode ? "Tu contraseña" : "Mínimo 6 caracteres"}
                   />
                 </div>
 
-                <div>
-                  <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                    Nombre completo
-                  </label>
-                  <input
-                    id="fullName"
-                    type="text"
-                    required
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                    placeholder="Juan Pérez"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="age" className="block text-sm font-medium text-gray-700">
-                    <span className="flex items-center">
-                      Edad <Icon icon="material-symbols:star" className="w-4 h-4 ml-1 text-yellow-500" />
-                    </span>
-                  </label>
-                  <input
-                    id="age"
-                    type="number"
-                    required
-                    min="13"
-                    max="120"
-                    value={formData.age}
-                    onChange={(e) => setFormData({...formData, age: e.target.value})}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                    placeholder="Ej: 25"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
-                    Género 👤
-                  </label>
-                  <select
-                    id="gender"
-                    required
-                    value={formData.gender}
-                    onChange={(e) => setFormData({...formData, gender: e.target.value})}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                  >
-                    <option value="">Selecciona tu género</option>
-                    <option value="masculino">Masculino</option>
-                    <option value="femenino">Femenino</option>
-                    <option value="otro">Otro</option>
-                    <option value="no_decir">Prefiero no decir</option>
-                  </select>
-                </div>
-
+                {/* Campos adicionales solo para registro */}
+                {!isLoginMode && (
+                  <>
+                    <div>
+                      <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
+                        Nombre completo
+                      </label>
+                      <input
+                        id="fullName"
+                        type="text"
+                        required={!isLoginMode}
+                        value={formData.fullName}
+                        onChange={(e) => {
+                          setFormData({...formData, fullName: e.target.value})
+                          if (error) setError('') // Limpiar error al escribir
+                        }}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                        placeholder="Juan Pérez"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="age" className="block text-sm font-medium text-gray-700">
+                        <span className="flex items-center">
+                          Edad <Icon icon="material-symbols:star" className="w-4 h-4 ml-1 text-yellow-500" />
+                        </span>
+                      </label>
+                      <input
+                        id="age"
+                        type="number"
+                        required={!isLoginMode}
+                        min="13"
+                        max="120"
+                        value={formData.age}
+                        onChange={(e) => {
+                          setFormData({...formData, age: e.target.value})
+                          if (error) setError('') // Limpiar error al escribir
+                        }}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                        placeholder="Ej: 25"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
+                        Género 👤
+                      </label>
+                      <select
+                        id="gender"
+                        required={!isLoginMode}
+                        value={formData.gender}
+                        onChange={(e) => {
+                          setFormData({...formData, gender: e.target.value})
+                          if (error) setError('') // Limpiar error al escribir
+                        }}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                      >
+                        <option value="">Selecciona tu género</option>
+                        <option value="masculino">Masculino</option>
+                        <option value="femenino">Femenino</option>
+                        <option value="otro">Otro</option>
+                        <option value="no_decir">Prefiero no decir</option>
+                      </select>
+                    </div>
+                  </>
+                )}
+                
                 <button
                   type="submit"
                   disabled={loading}
                   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
                 >
-                  {loading ? 'Creando cuenta...' : 'Crear cuenta con edad'}
+                  {loading 
+                    ? (isLoginMode ? 'Iniciando sesión...' : 'Creando cuenta...') 
+                    : (isLoginMode ? 'Iniciar Sesión' : 'Crear Cuenta')
+                  }
                 </button>
               </form>
               
-              <div className="mt-4 text-center">
-                <button
-                  onClick={() => setShowCustomForm(false)}
-                  className="text-sm font-medium text-gray-600 hover:text-gray-500"
-                >
-                  ← Volver al formulario normal
-                </button>
-              </div>
             </>
           )}
         </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
+import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { CheckCircle, XCircle, Loader, CreditCard } from 'lucide-react'
 import { PaymentService } from '../services/paymentService'
 import type { WebPayConfirmation } from '../config/webpay'
@@ -7,23 +7,39 @@ import toast from 'react-hot-toast'
 
 export default function PaymentConfirmation() {
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [confirmation, setConfirmation] = useState<WebPayConfirmation | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const token = searchParams.get('token_ws')
+    // Verificar si es WebPay o MercadoPago
+    const webpayToken = searchParams.get('token_ws')
+    const mercadoPagoPaymentId = searchParams.get('payment_id')
+    const mercadoPagoStatus = searchParams.get('status')
+    const externalReference = searchParams.get('external_reference')
     
-    if (!token) {
-      setError('Token de transacción no encontrado')
+    console.log('Payment confirmation params:', {
+      webpayToken,
+      mercadoPagoPaymentId,
+      mercadoPagoStatus,
+      externalReference,
+      allParams: Object.fromEntries(searchParams.entries())
+    })
+    
+    if (webpayToken) {
+      // Flujo de WebPay
+      confirmWebPayPayment(webpayToken)
+    } else if (mercadoPagoPaymentId && mercadoPagoStatus) {
+      // Flujo de MercadoPago
+      confirmMercadoPagoPayment(mercadoPagoPaymentId, externalReference)
+    } else {
+      setError('Parámetros de pago no encontrados')
       setLoading(false)
-      return
     }
-
-    confirmPayment(token)
   }, [searchParams])
 
-  const confirmPayment = async (token: string) => {
+  const confirmWebPayPayment = async (token: string) => {
     try {
       const result = await PaymentService.confirmTransaction(token)
       setConfirmation(result)
@@ -34,7 +50,45 @@ export default function PaymentConfirmation() {
         toast.error('El pago no pudo ser procesado')
       }
     } catch (error) {
-      console.error('Error confirming payment:', error)
+      console.error('Error confirming WebPay payment:', error)
+      setError('Error al confirmar el pago')
+      toast.error('Error al confirmar el pago')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const confirmMercadoPagoPayment = async (paymentId: string, externalReference?: string) => {
+    try {
+      console.log('Confirmando pago MercadoPago:', { paymentId, externalReference })
+      
+      const response = await fetch('/api/confirm-mercadopago-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          payment_id: paymentId,
+          external_reference: externalReference
+        })
+      })
+
+      const result = await response.json()
+      console.log('Respuesta de confirmación:', result)
+
+      if (response.ok && result.success) {
+        toast.success('¡Pago procesado exitosamente!')
+        
+        // Redirigir a página de éxito después de 1 segundo
+        setTimeout(() => {
+          navigate(`/payment/success?payment_id=${paymentId}&type=guest&external_reference=${externalReference}`)
+        }, 1000)
+      } else {
+        toast.error('El pago no pudo ser procesado')
+        setError(result.message || 'Error al confirmar el pago')
+      }
+    } catch (error) {
+      console.error('Error confirming MercadoPago payment:', error)
       setError('Error al confirmar el pago')
       toast.error('Error al confirmar el pago')
     } finally {

@@ -24,6 +24,7 @@ export class MercadoPagoService {
   static async createPaymentPreference(paymentData: PaymentData): Promise<MercadoPagoPreference> {
     try {
       console.log('Creating MercadoPago preference with data:', paymentData)
+      console.log('External reference will be:', `${paymentData.user_id}-${paymentData.ebook_id}-${Date.now()}`)
       
       // Llamar a la API para crear la preferencia
       const response = await fetch('/api/create-mercadopago-preference', {
@@ -39,7 +40,7 @@ export class MercadoPagoService {
             unit_price: paymentData.unit_price
           }],
           back_urls: {
-            success: `${window.location.origin}/payment/success`,
+            success: `${window.location.origin}/payment/confirmation`,
             failure: `${window.location.origin}/payment/failure`,
             pending: `${window.location.origin}/payment/pending`
           },

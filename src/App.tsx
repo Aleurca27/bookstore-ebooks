@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { supabase } from './config/supabase'
+import { initMetaPixel } from './config/metaPixel'
+import { useVisitorTracking } from './hooks/useVisitorTracking'
 import type { User } from '@supabase/supabase-js'
 
 // Componentes
@@ -23,8 +25,27 @@ function App() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // Tracking de visitantes - se actualiza cuando cambia la ruta
+  useVisitorTracking({
+    pageUrl: window.location.pathname,
+    userId: user?.id,
+    enabled: true
+  })
+
   useEffect(() => {
-    // Obtener sesión actual
+    // Inicializar Meta Pixel
+    initMetaPixel()
+
+    // En desarrollo local, forzar que no haya sesión iniciada
+    if (import.meta.env.DEV) {
+      console.log('🔧 Modo desarrollo: Forzando cierre de sesión')
+      supabase.auth.signOut()
+      setUser(null)
+      setLoading(false)
+      return
+    }
+
+    // Obtener sesión actual (solo en producción)
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       setLoading(false)
@@ -61,11 +82,11 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/perfil" element={<Profile user={user} />} />
                 <Route path="/carrito" element={<Cart user={user} />} />
-                <Route path="/admin" element={<Admin user={user} />} />
-                <Route path="/payment/confirmation" element={<PaymentConfirmation />} />
-                <Route path="/payment/success" element={<PaymentSuccess />} />
-                <Route path="/payment/failure" element={<PaymentFailure />} />
-                <Route path="/payment/pending" element={<PaymentPending />} />
+              <Route path="/admin" element={<Admin user={user} />} />
+              <Route path="/payment/confirmation" element={<PaymentConfirmation />} />
+              <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route path="/payment/failure" element={<PaymentFailure />} />
+              <Route path="/payment/pending" element={<PaymentPending />} />
           </Routes>
         </main>
         <Toaster position="top-right" />

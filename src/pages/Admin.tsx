@@ -1,775 +1,607 @@
-import { useEffect, useState } from 'react'
-import { Plus, Edit, Trash2, Upload, DollarSign, Users, BookOpen, TrendingUp, Activity, Eye, Calendar, Clock, Award, CheckCircle, AlertCircle } from 'lucide-react'
-import { supabase, type Ebook } from '../config/supabase'
+import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { 
+  Users, 
+  ShoppingCart, 
+  Eye, 
+  TrendingUp, 
+  DollarSign, 
+  BookOpen, 
+  Calendar,
+  Download,
+  UserCheck,
+  CreditCard,
+  BarChart3,
+  Activity,
+  RefreshCw,
+  Globe,
+  Clock,
+  Monitor
+} from 'lucide-react'
+import { Icon } from '@iconify/react'
+import { supabase } from '../config/supabase'
 import type { User } from '@supabase/supabase-js'
 import toast from 'react-hot-toast'
+import { useVisitorTracking } from '../hooks/useVisitorTracking'
+import { useVisitorStatsStream } from '../hooks/useVisitorStatsStream'
+
+interface AdminStats {
+  totalUsers: number
+  totalPurchases: number
+  totalGuestPurchases: number
+  totalRevenue: number
+  totalPageViews: number
+  recentUsers: any[]
+  recentPurchases: any[]
+  monthlyStats: {
+    month: string
+    users: number
+    sales: number
+    revenue: number
+  }[]
+  popularBooks: {
+    title: string
+    sales: number
+    revenue: number
+  }[]
+  conversionRate?: number
+  averageOrderValue?: number
+  salesGrowth?: number
+  revenueGrowth?: number
+}
 
 interface AdminProps {
   user: User | null
 }
 
-interface EbookForm {
-  title: string
-  author: string
-  description: string
-  price: number
-  category: string
-  cover_image: string
-  featured: boolean
-}
-
-interface Purchase {
-  id: string
-  amount: number
-  status: string
-  created_at: string
-  ebook_id: string
-  user_id: string
-  ebooks: {
-    title: string
-    author: string
-  }
-  profiles: {
-    full_name: string
-    email: string
-  }
-}
-
-interface UserProgress {
-  user_id: string
-  ebook_id: string
-  progress: number
-  last_read: string
-  profiles: {
-    full_name: string
-    email: string
-  }
-  ebooks: {
-    title: string
-    author: string
-  }
-}
-
 export default function Admin({ user }: AdminProps) {
-  const [books, setBooks] = useState<Ebook[]>([])
-  const [purchases, setPurchases] = useState<Purchase[]>([])
-  const [userProgress, setUserProgress] = useState<UserProgress[]>([])
+  const navigate = useNavigate()
+  const [stats, setStats] = useState<AdminStats | null>(null)
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [editingBook, setEditingBook] = useState<Ebook | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [activeTab, setActiveTab] = useState<'books' | 'sales' | 'progress' | 'stats'>('stats')
-  const [stats, setStats] = useState({
-    totalBooks: 0,
-    totalSales: 0,
-    totalRevenue: 0,
-    totalUsers: 0,
-    avgProgress: 0
+  const [refreshing, setRefreshing] = useState(false)
+
+  // Hook para estadísticas de visitantes en tiempo real
+  const { stats: visitorStats, loading: visitorLoading, error: visitorError, isConnected, reconnect } = useVisitorStatsStream()
+
+  // Tracking específico para la página de admin
+  useVisitorTracking({
+    pageUrl: '/admin',
+    userId: user?.id,
+    enabled: true
   })
 
-  const [form, setForm] = useState<EbookForm>({
-    title: '',
-    author: '',
-    description: '',
-    price: 0,
-    category: '',
-    cover_image: '',
-    featured: false
-  })
+  // Verificar si el usuario es admin
+  const isAdmin = user?.email === 'aleurca@gmail.com' || user?.email === 'contacto@emprendecl.com'
 
   useEffect(() => {
-    if (user) {
-      checkAdminStatus()
-      fetchBooks()
-      fetchPurchases()
-      fetchUserProgress()
-      fetchStats()
+    if (!user) {
+      navigate('/login')
+      return
     }
-  }, [user])
 
-  const checkAdminStatus = async () => {
-    if (!user) return
-
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('role')
-        .eq('user_id', user.id)
-        .single()
-
-      if (error) throw error
-      setIsAdmin(data?.role === 'admin')
-    } catch (error) {
-      console.error('Error checking admin status:', error)
-      setIsAdmin(false)
+    if (!isAdmin) {
+      toast.error('No tienes permisos para acceder a esta página')
+      navigate('/')
+      return
     }
-  }
 
-  const fetchBooks = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('ebooks')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-      setBooks(data || [])
-    } catch (error) {
-      console.error('Error fetching books:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchPurchases = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('purchases')
-        .select(`
-          *,
-          ebooks (title, author),
-          user_profiles (full_name, email)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(50)
-
-      if (error) throw error
-      setPurchases(data || [])
-    } catch (error) {
-      console.error('Error fetching purchases:', error)
-    }
-  }
-
-  const fetchUserProgress = async () => {
-    try {
-      // Simulamos datos de progreso por ahora
-      const progressData = [
-        {
-          user_id: '1',
-          ebook_id: '1',
-          progress: 75,
-          last_read: new Date().toISOString(),
-          profiles: { full_name: 'Juan Pérez', email: 'juan@email.com' },
-          ebooks: { title: 'El Arte de la Programación', author: 'Juan Pérez' }
-        },
-        {
-          user_id: '2',
-          ebook_id: '2',
-          progress: 45,
-          last_read: new Date().toISOString(),
-          profiles: { full_name: 'María García', email: 'maria@email.com' },
-          ebooks: { title: 'Marketing Digital', author: 'Ana López' }
-        }
-      ]
-      setUserProgress(progressData as any)
-    } catch (error) {
-      console.error('Error fetching user progress:', error)
-    }
-  }
+    fetchStats()
+  }, [user, navigate, isAdmin])
 
   const fetchStats = async () => {
     try {
-      // Total de libros
-      const { count: booksCount } = await supabase
-        .from('ebooks')
-        .select('*', { count: 'exact', head: true })
-
-      // Total de usuarios
-      const { count: usersCount } = await supabase
-        .from('user_profiles')
-        .select('*', { count: 'exact', head: true })
-
-      // Total de ventas y ingresos
-      const { data: salesData, error: salesError } = await supabase
-        .from('purchases')
-        .select('amount')
-        .eq('status', 'completed')
-
-      if (salesError) throw salesError
-
-      const totalSales = salesData?.length || 0
-      const totalRevenue = salesData?.reduce((sum, sale) => sum + sale.amount, 0) || 0
-
-      setStats({
-        totalBooks: booksCount || 0,
-        totalSales,
-        totalRevenue,
-        totalUsers: usersCount || 0,
-        avgProgress: 65 // Simulado por ahora
-      })
-    } catch (error) {
-      console.error('Error fetching stats:', error)
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    try {
-      if (editingBook) {
-        const { error } = await supabase
-          .from('ebooks')
-          .update(form)
-          .eq('id', editingBook.id)
-
-        if (error) throw error
-        toast.success('Libro actualizado correctamente')
-      } else {
-        const { error } = await supabase
-          .from('ebooks')
-          .insert([form])
-
-        if (error) throw error
-        toast.success('Libro creado correctamente')
+      setRefreshing(true)
+      
+      // Usar el API endpoint simplificado
+      const response = await fetch('/api/admin-stats-simple')
+      
+      if (!response.ok) {
+        throw new Error('Error al obtener estadísticas')
       }
-
-      resetForm()
-      fetchBooks()
-      fetchStats()
-    } catch (error) {
-      console.error('Error saving book:', error)
-      toast.error('Error al guardar el libro')
-    }
-  }
-
-  const handleEdit = (book: Ebook) => {
-    setEditingBook(book)
-    setForm({
-      title: book.title,
-      author: book.author,
-      description: book.description || '',
-      price: book.price,
-      category: book.category || '',
-      cover_image: book.cover_image || '',
-      featured: book.featured || false
-    })
-    setShowForm(true)
-  }
-
-  const handleDelete = async (bookId: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este libro?')) return
-
-    try {
-      const { error } = await supabase
-        .from('ebooks')
-        .delete()
-        .eq('id', bookId)
-
-      if (error) throw error
       
-      setBooks(prev => prev.filter(book => book.id !== bookId))
-      toast.success('Libro eliminado correctamente')
-      fetchStats()
+      const result = await response.json()
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Error desconocido')
+      }
+      
+      const apiStats = result.data
+      
+      setStats({
+        totalUsers: apiStats.overview.totalUsers,
+        totalPurchases: apiStats.overview.totalPurchases,
+        totalGuestPurchases: apiStats.overview.totalGuestPurchases,
+        totalRevenue: apiStats.overview.totalRevenue,
+        totalPageViews: apiStats.overview.totalUsers + apiStats.overview.totalSales,
+        recentUsers: apiStats.recentUsers,
+        recentPurchases: apiStats.recentPurchases,
+        monthlyStats: apiStats.monthlyStats,
+        popularBooks: apiStats.popularBooks,
+        // Métricas adicionales del API
+        conversionRate: apiStats.overview.conversionRate,
+        averageOrderValue: apiStats.overview.averageOrderValue,
+        salesGrowth: apiStats.overview.salesGrowth,
+        revenueGrowth: apiStats.overview.revenueGrowth
+      })
+
     } catch (error) {
-      console.error('Error deleting book:', error)
-      toast.error('Error al eliminar el libro')
+      console.error('Error fetching admin stats:', error)
+      toast.error('Error al cargar las estadísticas')
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
     }
   }
 
-  const resetForm = () => {
-    setForm({
-      title: '',
-      author: '',
-      description: '',
-      price: 0,
-      category: '',
-      cover_image: '',
-      featured: false
-    })
-    setEditingBook(null)
-    setShowForm(false)
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency: 'CLP'
+    }).format(amount * 1000)
   }
 
-  if (!user) {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Acceso restringido</h2>
-          <p className="text-gray-600 mb-4">Debes iniciar sesión para acceder al panel de administración</p>
+          <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Cargando estadísticas...</p>
         </div>
       </div>
     )
   }
 
-  if (!isAdmin) {
+  if (!stats) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Acceso denegado</h2>
-          <p className="text-gray-600 mb-4">No tienes permisos de administrador para acceder a esta página</p>
+          <p className="text-red-600">Error al cargar las estadísticas</p>
+          <button 
+            onClick={fetchStats}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Reintentar
+          </button>
         </div>
       </div>
     )
   }
-
-  const renderStatsTab = () => (
-    <div className="space-y-6">
-      {/* Estadísticas principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <BookOpen className="h-8 w-8 text-blue-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Libros</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalBooks}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <TrendingUp className="h-8 w-8 text-green-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Ventas</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalSales}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <DollarSign className="h-8 w-8 text-yellow-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Ingresos</p>
-              <p className="text-2xl font-bold text-gray-900">$CLP {stats.totalRevenue.toLocaleString()}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <Users className="h-8 w-8 text-purple-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Usuarios</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <Activity className="h-8 w-8 text-orange-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Progreso Promedio</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.avgProgress}%</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Resumen del negocio */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen del Negocio</h3>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Libros más vendidos</span>
-              <span className="text-sm font-medium">Marketing Digital</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Promedio por venta</span>
-              <span className="text-sm font-medium">$CLP {stats.totalSales > 0 ? Math.round(stats.totalRevenue / stats.totalSales).toLocaleString() : 0}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Usuarios activos</span>
-              <span className="text-sm font-medium">{userProgress.length}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Actividad Reciente</h3>
-          <div className="space-y-3">
-            {purchases.slice(0, 5).map((purchase, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{purchase.profiles?.full_name || 'Usuario'}</p>
-                  <p className="text-xs text-gray-500">Compró: {purchase.ebooks?.title}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-green-600">$CLP {purchase.amount.toLocaleString()}</p>
-                  <p className="text-xs text-gray-500">{new Date(purchase.created_at).toLocaleDateString()}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-
-  const renderBooksTab = () => (
-    <div className="space-y-6">
-      {/* Header con botón */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Gestión de Libros</h2>
-        <button
-          onClick={() => setShowForm(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center space-x-2"
-        >
-          <Plus className="h-5 w-5" />
-          <span>Añadir Nuevo Libro</span>
-        </button>
-      </div>
-
-      {/* Formulario */}
-      {showForm && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
-            {editingBook ? 'Editar Libro' : 'Nuevo Libro'}
-          </h3>
-          
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Título</label>
-              <input
-                type="text"
-                value={form.title}
-                onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Autor</label>
-              <input
-                type="text"
-                value={form.author}
-                onChange={(e) => setForm(prev => ({ ...prev, author: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
-              <textarea
-                value={form.description}
-                onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-                rows={3}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Precio (CLP)</label>
-              <input
-                type="number"
-                value={form.price}
-                onChange={(e) => setForm(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                step="0.01"
-                min="0"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Categoría</label>
-              <input
-                type="text"
-                value={form.category}
-                onChange={(e) => setForm(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">URL de la portada</label>
-              <input
-                type="url"
-                value={form.cover_image}
-                onChange={(e) => setForm(prev => ({ ...prev, cover_image: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={form.featured}
-                  onChange={(e) => setForm(prev => ({ ...prev, featured: e.target.checked }))}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">Libro destacado</span>
-              </label>
-            </div>
-
-            <div className="md:col-span-2 flex space-x-4">
-              <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
-                {editingBook ? 'Actualizar' : 'Crear'} Libro
-              </button>
-              <button
-                type="button"
-                onClick={resetForm}
-                className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg"
-              >
-                Cancelar
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Lista de libros */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900">Libros Registrados</h3>
-        </div>
-
-        {loading ? (
-          <div className="p-6">
-            <div className="space-y-4 animate-pulse">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="flex space-x-4">
-                  <div className="bg-gray-300 h-16 w-12 rounded"></div>
-                  <div className="flex-1 space-y-2">
-                    <div className="bg-gray-300 h-4 rounded w-3/4"></div>
-                    <div className="bg-gray-300 h-4 rounded w-1/2"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Libro</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Autor</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destacado</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {books.map((book) => (
-                  <tr key={book.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <img
-                          className="h-12 w-8 object-cover rounded"
-                          src={book.cover_image || 'https://via.placeholder.com/60x80'}
-                          alt={book.title}
-                        />
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{book.title}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{book.author}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{book.category || '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">$CLP {book.price.toLocaleString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        book.featured ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {book.featured ? 'Sí' : 'No'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex space-x-2 justify-end">
-                        <button
-                          onClick={() => handleEdit(book)}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(book.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-
-  const renderSalesTab = () => (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Ventas y Servicios Contratados</h2>
-      
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900">Historial de Ventas</h3>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Libro</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {purchases.map((purchase) => (
-                <tr key={purchase.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{purchase.profiles?.full_name || 'Usuario'}</div>
-                      <div className="text-sm text-gray-500">{purchase.profiles?.email}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{purchase.ebooks?.title}</div>
-                    <div className="text-sm text-gray-500">por {purchase.ebooks?.author}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    $CLP {purchase.amount.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      purchase.status === 'completed' 
-                        ? 'bg-green-100 text-green-800' 
-                        : purchase.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {purchase.status === 'completed' ? 'Completado' : 
-                       purchase.status === 'pending' ? 'Pendiente' : 'Fallido'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(purchase.created_at).toLocaleDateString('es-CL')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900">
-                      <Eye className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  )
-
-  const renderProgressTab = () => (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Progreso de Usuarios</h2>
-      
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900">Avance de Lectura</h3>
-        </div>
-        
-        <div className="p-6">
-          <div className="space-y-6">
-            {userProgress.map((progress, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex-1">
-                    <h4 className="text-lg font-medium text-gray-900">{progress.profiles?.full_name}</h4>
-                    <p className="text-sm text-gray-500">{progress.profiles?.email}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">{progress.ebooks?.title}</p>
-                    <p className="text-xs text-gray-500">por {progress.ebooks?.author}</p>
-                  </div>
-                </div>
-                
-                <div className="mb-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-700">Progreso de lectura</span>
-                    <span className="text-sm font-medium text-gray-900">{progress.progress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                      style={{ width: `${progress.progress}%` }}
-                    ></div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between text-sm text-gray-500">
-                  <div className="flex items-center space-x-1">
-                    <Clock className="h-4 w-4" />
-                    <span>Última lectura: {new Date(progress.last_read).toLocaleDateString('es-CL')}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {progress.progress >= 100 ? (
-                      <div className="flex items-center space-x-1 text-green-600">
-                        <CheckCircle className="h-4 w-4" />
-                        <span>Completado</span>
-                      </div>
-                    ) : progress.progress >= 50 ? (
-                      <div className="flex items-center space-x-1 text-blue-600">
-                        <Activity className="h-4 w-4" />
-                        <span>En progreso</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center space-x-1 text-orange-600">
-                        <AlertCircle className="h-4 w-4" />
-                        <span>Iniciado</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">Panel de Administración</h1>
-          
-          {/* Navegación por pestañas */}
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              {[
-                { id: 'stats', name: 'Estadísticas', icon: TrendingUp },
-                { id: 'books', name: 'Gestión de Libros', icon: BookOpen },
-                { id: 'sales', name: 'Ventas y Servicios', icon: DollarSign },
-                { id: 'progress', name: 'Progreso de Usuarios', icon: Activity }
-              ].map((tab) => (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <Icon icon="material-symbols:admin-panel-settings" className="h-8 w-8 text-blue-600" />
+              <h1 className="text-2xl font-bold text-gray-900">Panel de Administración</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              {/* Indicador de conexión en tiempo real */}
+              <div className="flex items-center space-x-2">
+                <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                <span className="text-sm text-gray-600">
+                  {isConnected ? 'Tiempo Real' : 'Desconectado'}
+                </span>
+              </div>
+              
+              <button
+                onClick={fetchStats}
+                disabled={refreshing}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                <span>Actualizar</span>
+              </button>
+              
+              {!isConnected && (
                 <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
+                  onClick={reconnect}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
                 >
-                  <tab.icon className="h-4 w-4" />
-                  <span>{tab.name}</span>
+                  Reconectar
                 </button>
-              ))}
-            </nav>
+              )}
+              
+              <button
+                onClick={() => navigate('/')}
+                className="px-4 py-2 text-gray-600 hover:text-gray-900"
+              >
+                Volver al sitio
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Métricas principales */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Usuarios</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <ShoppingCart className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Ventas</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalPurchases + stats.totalGuestPurchases}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <DollarSign className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Ingresos Totales</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Eye className="h-6 w-6 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Visitas Estimadas</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalPageViews}</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Contenido de las pestañas */}
-        <div className="mt-6">
-          {activeTab === 'stats' && renderStatsTab()}
-          {activeTab === 'books' && renderBooksTab()}
-          {activeTab === 'sales' && renderSalesTab()}
-          {activeTab === 'progress' && renderProgressTab()}
+        {/* Métricas de Visitantes en Tiempo Real */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Globe className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Visitantes Activos</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {visitorLoading ? '...' : (visitorStats?.overview?.active_visitors || 0)}
+                </p>
+                <p className="text-xs text-gray-500">Últimos 5 minutos</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Monitor className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Visitas Hoy</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {visitorLoading ? '...' : (visitorStats?.overview?.visits_today || 0)}
+                </p>
+                <p className="text-xs text-gray-500">Últimas 24 horas</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Users className="h-6 w-6 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Visitantes Únicos</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {visitorLoading ? '...' : (visitorStats?.overview?.unique_visitors || 0)}
+                </p>
+                <p className="text-xs text-gray-500">Últimas 24 horas</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Clock className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Visitas</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {visitorLoading ? '...' : (visitorStats?.overview?.total_visits || 0)}
+                </p>
+                <p className="text-xs text-gray-500">Desde siempre</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Métricas adicionales */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <TrendingUp className="h-6 w-6 text-indigo-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Tasa de Conversión</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.conversionRate?.toFixed(1) || 0}%</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-emerald-100 rounded-lg">
+                <BarChart3 className="h-6 w-6 text-emerald-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Valor Promedio</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.averageOrderValue || 0)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <Activity className="h-6 w-6 text-orange-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Crecimiento Ventas</p>
+                <p className={`text-2xl font-bold ${(stats.salesGrowth || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {(stats.salesGrowth || 0) >= 0 ? '+' : ''}{stats.salesGrowth?.toFixed(1) || 0}%
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-pink-100 rounded-lg">
+                <Calendar className="h-6 w-6 text-pink-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Crecimiento Ingresos</p>
+                <p className={`text-2xl font-bold ${(stats.revenueGrowth || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {(stats.revenueGrowth || 0) >= 0 ? '+' : ''}{stats.revenueGrowth?.toFixed(1) || 0}%
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Usuarios recientes */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Usuarios Recientes</h3>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                {stats.recentUsers.map((user, index) => (
+                  <div key={index} className="flex items-center space-x-4">
+                    <div className="p-2 bg-gray-100 rounded-full">
+                      <UserCheck className="h-5 w-5 text-gray-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">{user.full_name || 'Sin nombre'}</p>
+                      <p className="text-sm text-gray-600">{user.email}</p>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {formatDate(user.created_at)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Compras recientes */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Compras Recientes</h3>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                {stats.recentPurchases.map((purchase, index) => (
+                  <div key={index} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="p-2 bg-green-100 rounded-full">
+                      <CreditCard className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {purchase.ebooks?.title || 'Sin título'}
+                      </p>
+                      <p className="text-sm text-gray-600 truncate">
+                        {purchase.type === 'registered' 
+                          ? `👤 ${purchase.customer_name || 'Usuario'} (${purchase.customer_email || 'Sin email'})`
+                          : `👤 ${purchase.name} (${purchase.email})`
+                        }
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        📞 {purchase.type === 'registered' 
+                          ? (purchase.customer_phone || 'Sin teléfono')
+                          : purchase.phone
+                        }
+                      </p>
+                      <p className="text-xs text-blue-600">
+                        💳 {purchase.type === 'registered' 
+                          ? (purchase.payment_method || 'MercadoPago')
+                          : (purchase.payment_method || 'MercadoPago')
+                        }
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-gray-900">
+                        {formatCurrency(purchase.ebooks?.price || 0)}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {formatDate(purchase.created_at)}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {purchase.type === 'registered' ? 'Registrado' : 'Invitado'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Estadísticas mensuales */}
+        <div className="mt-8">
+          <div className="bg-white rounded-lg shadow">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Estadísticas Mensuales</h3>
+            </div>
+            <div className="p-6">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Mes
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Ventas
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Ingresos
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {stats.monthlyStats.map((stat, index) => (
+                      <tr key={index}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {stat.month}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {stat.sales}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {formatCurrency(stat.revenue)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Libros más populares */}
+        <div className="mt-8">
+          <div className="bg-white rounded-lg shadow">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Libros Más Populares</h3>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                {stats.popularBooks.map((book, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-2 bg-blue-100 rounded-full">
+                        <BookOpen className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{book.title}</p>
+                        <p className="text-sm text-gray-600">{book.sales} ventas</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-gray-900">
+                        {formatCurrency(book.revenue)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Páginas más visitadas */}
+        <div className="mt-8">
+          <div className="bg-white rounded-lg shadow">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Páginas Más Visitadas</h3>
+              <p className="text-sm text-gray-600 mt-1">Últimas 24 horas</p>
+            </div>
+            <div className="p-6">
+              {visitorLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="h-6 w-6 animate-spin text-blue-600" />
+                  <span className="ml-2 text-gray-600">Cargando...</span>
+                </div>
+              ) : visitorError ? (
+                <div className="text-center py-8">
+                  <p className="text-red-600 mb-2">Error al cargar datos</p>
+                  <button
+                    onClick={reconnect}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Reconectar
+                  </button>
+                </div>
+              ) : visitorStats?.topPages?.length > 0 ? (
+                <div className="space-y-3">
+                  {visitorStats.topPages.map((page, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-green-100 rounded-full">
+                          <Globe className="h-4 w-4 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {page.url === '/' ? 'Página Principal' : page.url}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-gray-900">
+                          {page.visits} visitas
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Globe className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No hay datos de visitas disponibles</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

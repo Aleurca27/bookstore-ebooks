@@ -1,0 +1,9 @@
+<svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- WebPay Logo -->
+  <rect width="120" height="40" rx="8" fill="#00A650"/>
+  <path d="M15 12h90v16H15z" fill="none"/>
+  <text x="60" y="25" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="white">WebPay</text>
+  <rect x="20" y="15" width="8" height="10" rx="2" fill="white"/>
+  <rect x="30" y="15" width="8" height="10" rx="2" fill="white"/>
+  <rect x="40" y="15" width="8" height="10" rx="2" fill="white"/>
+</svg>

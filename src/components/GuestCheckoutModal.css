@@ -1,0 +1,106 @@
+/* Estilos específicos para el modal de checkout en móvil */
+
+@media (max-width: 640px) {
+  .checkout-modal {
+    /* Asegurar que el modal ocupe toda la pantalla en móvil */
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 9999 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  /* Asegurar que el contenedor padre también ocupe toda la pantalla */
+  .checkout-modal-overlay {
+    align-items: stretch !important;
+    justify-content: stretch !important;
+  }
+  
+  /* Asegurar que el fondo sea completamente opaco */
+  .checkout-modal-overlay {
+    background-color: rgba(0, 0, 0, 0.9) !important;
+    backdrop-filter: blur(4px) !important;
+    padding: 0 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 9999 !important;
+  }
+  
+}
+
+/* Estilos para desktop */
+@media (min-width: 641px) {
+  .checkout-modal-overlay {
+    padding: 0.5rem !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .checkout-modal-content {
+    /* Padding adecuado para móvil */
+    padding: 1rem !important;
+    flex: 1 !important;
+    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  .checkout-modal-header {
+    /* Header fijo en la parte superior */
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  /* Evitar zoom automático en inputs */
+  .checkout-input {
+    font-size: 16px !important;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+  
+  /* Asegurar que los inputs no causen zoom */
+  input[type="email"],
+  input[type="text"],
+  input[type="tel"] {
+    font-size: 16px !important;
+  }
+  
+  /* Asegurar que el botón de compra esté siempre visible */
+  .checkout-button-container {
+    margin-top: auto !important;
+    padding-top: 1rem !important;
+  }
+}
+
+/* Estilos generales para mejorar la experiencia */
+.checkout-modal-scroll {
+  /* Scroll suave */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mejorar la accesibilidad del botón de cerrar */
+.checkout-close-button {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

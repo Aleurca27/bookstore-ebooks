@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../config/supabase'
 import type { User } from '@supabase/supabase-js'
 
-export const useCartCount = (user: User | null) => {
-  const [cartCount, setCartCount] = useState(0)
+export function useCartCount(user: User | null) {
+  const [count, setCount] = useState(0)
 
   useEffect(() => {
     if (!user) {
-      setCartCount(0)
+      setCount(0)
       return
     }
 
@@ -19,9 +19,10 @@ export const useCartCount = (user: User | null) => {
           .eq('user_id', user.id)
 
         if (error) throw error
-        setCartCount(count || 0)
+        setCount(count || 0)
       } catch (error) {
         console.error('Error fetching cart count:', error)
+        setCount(0)
       }
     }
 
@@ -49,5 +50,5 @@ export const useCartCount = (user: User | null) => {
     }
   }, [user])
 
-  return cartCount
+  return count
 }

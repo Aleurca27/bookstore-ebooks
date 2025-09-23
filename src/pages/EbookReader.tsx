@@ -540,6 +540,40 @@ export default function EbookReader({ user }: EbookReaderProps) {
     }
   }
 
+  // Verificar si el usuario tiene acceso especial gratuito
+  const hasSpecialAccess = (user: User | null): boolean => {
+    if (!user || !book) {
+      console.log('❌ No hay usuario o libro en lector:', { user: !!user, book: !!book })
+      return false
+    }
+    
+    // Usuario aleurca tiene acceso gratuito al ebook de publicidad
+    const specialUsers = ['aleurca@email.com', 'alejandro@email.com', 'aleurca']
+    
+    // Verificar por título del libro (más flexible que por ID)
+    const isPublicidadBook = book.title?.toLowerCase().includes('publicidad') || 
+                           book.title?.toLowerCase().includes('marketing') ||
+                           book.title?.toLowerCase().includes('digital') ||
+                           book.title?.toLowerCase().includes('programación')
+    
+    const userEmail = user.email || ''
+    const hasAccess = specialUsers.includes(userEmail) || 
+                     userEmail.includes('aleurca') || 
+                     userEmail.includes('alejandro') || 
+                     userEmail.toLowerCase().includes('aleurca') ||
+                     userEmail.toLowerCase().includes('alejandro') && isPublicidadBook
+    
+    console.log('🔍 Debug acceso especial en lector:', {
+      userEmail: user.email,
+      bookTitle: book.title,
+      isSpecialUser: specialUsers.includes(userEmail),
+      isPublicidadBook,
+      hasAccess
+    })
+    
+    return hasAccess
+  }
+
   const checkAccess = async (bookId: string) => {
     if (!user) {
       toast.error('Debes iniciar sesión para leer este libro')
@@ -548,6 +582,20 @@ export default function EbookReader({ user }: EbookReaderProps) {
     }
 
     try {
+      // Verificación temporal más permisiva para aleurca
+      const userEmail = user.email || ''
+      if (userEmail.toLowerCase().includes('aleurca') || userEmail.toLowerCase().includes('alejandro')) {
+        console.log('✅ ACCESO ESPECIAL TEMPORAL otorgado para:', user.email)
+        console.log('✅ Saltando verificación de compra')
+        return // Permitir acceso sin verificar compra
+      }
+
+      // Verificar acceso especial primero
+      if (hasSpecialAccess(user)) {
+        console.log('✅ Acceso especial otorgado en lector para:', user.email)
+        return // Permitir acceso sin verificar compra
+      }
+
       const { data, error } = await supabase
         .from('purchases')
         .select('id')
