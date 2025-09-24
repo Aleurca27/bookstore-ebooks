@@ -470,7 +470,7 @@ export default function EbookDetail({ user }: EbookDetailProps) {
                 <div className="border-t border-gray-200 pt-6">
                   <div className="flex items-baseline space-x-3 mb-2">
                     <span className="text-xl text-gray-500 line-through">$50.000</span>
-                    <span className="text-3xl font-light text-gray-900">$29.900</span>
+                    <span className="text-3xl font-light text-gray-900">${Math.round(book.price * 1000).toLocaleString('es-CL')}</span>
                   </div>
                   <p className="text-gray-600 text-sm">Acceso de por vida • Descuento por tiempo limitado</p>
                 </div>

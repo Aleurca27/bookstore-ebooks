@@ -132,7 +132,7 @@ export default function GuestCheckoutModal({
           <div className="bg-gray-50 rounded-lg p-3 mb-4">
             <h3 className="font-semibold text-gray-900 mb-2">{bookTitle}</h3>
             <div className="flex items-center justify-between">
-              <span className="text-xl font-light text-gray-900">$29.900</span>
+              <span className="text-xl font-light text-gray-900">${Math.round(bookPrice * 1000).toLocaleString('es-CL')}</span>
               <div className="flex items-center text-green-600 text-sm">
                 <Lock className="h-4 w-4 mr-1" />
                 <span>Pago seguro</span>
