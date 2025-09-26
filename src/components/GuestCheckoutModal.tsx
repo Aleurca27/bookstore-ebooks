@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { X, Mail, User, Phone, Lock, Eye, EyeOff, CreditCard, Smartphone } from 'lucide-react'
 import { Icon } from '@iconify/react'
+import { paymentService, PaymentItem } from '../services/paymentService'
 import './GuestCheckoutModal.css'
 
 interface GuestCheckoutModalProps {
@@ -70,11 +71,88 @@ export default function GuestCheckoutModal({
 
     setIsSubmitting(true)
     try {
-      await onProceed(formData)
+      // Generar ID externo único
+      const externalId = paymentService.generateExternalId()
+      
+      // Crear items de pago
+      const paymentItems = paymentService.createEbookPaymentItems(bookPrice)
+      
+      // URLs de retorno
+      const successUrl = `${window.location.origin}/pago-exitoso?external_id=${externalId}`
+      const notificationUrl = `${window.location.origin}/api/webhook-mercadopago`
+      
+      let paymentResponse;
+      
+      if (formData.paymentMethod === 'mercadopago') {
+        // Inicializar pago con MercadoPago
+        paymentResponse = await paymentService.initializeMercadoPagoPayment(
+          paymentItems,
+          externalId,
+          successUrl,
+          notificationUrl
+        )
+        
+        // Guardar datos del cliente y pago en la base de datos
+        await saveGuestPurchase(formData, externalId, 'mercadopago', paymentResponse)
+        
+        // Redirigir a MercadoPago
+        paymentService.redirectToPayment(paymentResponse.response.init_point, 'MP')
+        
+      } else if (formData.paymentMethod === 'webpay') {
+        // Inicializar pago con WebPay
+        paymentResponse = await paymentService.initializeWebPayPayment(
+          paymentItems,
+          externalId,
+          successUrl,
+          notificationUrl
+        )
+        
+        // Guardar datos del cliente y pago en la base de datos
+        await saveGuestPurchase(formData, externalId, 'webpay', paymentResponse)
+        
+        // Redirigir a WebPay usando formulario HTML
+        paymentService.redirectToPayment('', 'WEBPAY', paymentResponse.response.token)
+      }
+      
     } catch (error) {
       console.error('Error en checkout:', error)
+      alert('Error al procesar el pago. Por favor, intenta nuevamente.')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  // Función para guardar la compra del invitado
+  const saveGuestPurchase = async (
+    guestData: GuestData, 
+    externalId: string, 
+    paymentMethod: string, 
+    paymentResponse: any
+  ) => {
+    try {
+      const response = await fetch('/api/save-guest-purchase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customer_name: guestData.name,
+          customer_email: guestData.email,
+          customer_phone: guestData.phone,
+          payment_method: paymentMethod,
+          external_id: externalId,
+          payment_data: paymentResponse,
+          book_title: bookTitle,
+          book_price: bookPrice
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Error al guardar la compra')
+      }
+    } catch (error) {
+      console.error('Error al guardar compra:', error)
+      // No lanzamos el error para no interrumpir el flujo de pago
     }
   }
 
@@ -211,29 +289,53 @@ export default function GuestCheckoutModal({
                 <CreditCard className="h-4 w-4 inline mr-2" />
                 Método de pago *
               </label>
-                <div className="flex justify-center">
-                  {/* Solo MercadoPago */}
-                  <button
-                    type="button"
-                    onClick={() => handleInputChange('paymentMethod', 'mercadopago')}
-                    disabled={isSubmitting}
-                    className={`p-4 border-2 rounded-lg transition-all duration-200 ${
-                      formData.paymentMethod === 'mercadopago'
-                        ? 'border-blue-500 bg-blue-50 shadow-md'
-                        : 'border-gray-300 hover:border-gray-400'
-                    } disabled:opacity-50`}
-                  >
-                    <div className="flex flex-col items-center">
-                      <div className="w-24 h-10 flex items-center justify-center">
-                        <img 
-                          src="/images/Mercado-pago-1024x267.png"
-                          alt="MercadoPago" 
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
+              <div className="grid grid-cols-2 gap-3">
+                {/* MercadoPago */}
+                <button
+                  type="button"
+                  onClick={() => handleInputChange('paymentMethod', 'mercadopago')}
+                  disabled={isSubmitting}
+                  className={`p-3 border-2 rounded-lg transition-all duration-200 ${
+                    formData.paymentMethod === 'mercadopago'
+                      ? 'border-blue-500 bg-blue-50 shadow-md'
+                      : 'border-gray-300 hover:border-gray-400'
+                  } disabled:opacity-50`}
+                >
+                  <div className="flex flex-col items-center">
+                    <div className="w-20 h-8 flex items-center justify-center mb-1">
+                      <img 
+                        src="/images/Mercado-pago-1024x267.png"
+                        alt="MercadoPago" 
+                        className="w-full h-full object-contain"
+                      />
                     </div>
-                  </button>
-                </div>
+                    <span className="text-xs text-gray-600">MercadoPago</span>
+                  </div>
+                </button>
+
+                {/* WebPay */}
+                <button
+                  type="button"
+                  onClick={() => handleInputChange('paymentMethod', 'webpay')}
+                  disabled={isSubmitting}
+                  className={`p-3 border-2 rounded-lg transition-all duration-200 ${
+                    formData.paymentMethod === 'webpay'
+                      ? 'border-blue-500 bg-blue-50 shadow-md'
+                      : 'border-gray-300 hover:border-gray-400'
+                  } disabled:opacity-50`}
+                >
+                  <div className="flex flex-col items-center">
+                    <div className="w-20 h-8 flex items-center justify-center mb-1">
+                      <img 
+                        src="/images/images.png"
+                        alt="WebPay" 
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <span className="text-xs text-gray-600">WebPay</span>
+                  </div>
+                </button>
+              </div>
             </div>
 
             {/* Info Box */}

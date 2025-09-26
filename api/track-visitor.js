@@ -46,20 +46,29 @@ export default async function handler(req, res) {
       console.error('Error registrando visita:', visitError)
     }
 
-    // Primero verificar si la sesión ya existe
-    const { data: existingSession } = await supabaseClient
+    // Usar upsert para manejar sesiones existentes o nuevas
+    const { error: upsertError } = await supabaseClient
       .from('active_sessions')
-      .select('*')
-      .eq('session_id', finalSessionId)
-      .single()
+      .upsert({
+        session_id: finalSessionId,
+        visitor_ip: client_ip,
+        user_agent: user_agent,
+        last_activity: new Date().toISOString(),
+        page_views: 1, // Se incrementará en la siguiente consulta si existe
+        user_id: user_id || null
+      }, {
+        onConflict: 'session_id',
+        ignoreDuplicates: false
+      })
 
-    if (existingSession) {
-      // Actualizar sesión existente
+    if (upsertError) {
+      console.error('Error en upsert de sesión:', upsertError)
+      
+      // Si el upsert falla, intentar actualizar la sesión existente
       const { error: updateError } = await supabaseClient
         .from('active_sessions')
         .update({
           last_activity: new Date().toISOString(),
-          page_views: existingSession.page_views + 1,
           visitor_ip: client_ip,
           user_agent: user_agent
         })
@@ -67,22 +76,6 @@ export default async function handler(req, res) {
 
       if (updateError) {
         console.error('Error actualizando sesión existente:', updateError)
-      }
-    } else {
-      // Crear nueva sesión
-      const { error: insertError } = await supabaseClient
-        .from('active_sessions')
-        .insert({
-          session_id: finalSessionId,
-          visitor_ip: client_ip,
-          user_agent: user_agent,
-          last_activity: new Date().toISOString(),
-          page_views: 1,
-          user_id: user_id || null
-        })
-
-      if (insertError) {
-        console.error('Error creando nueva sesión:', insertError)
       }
     }
 

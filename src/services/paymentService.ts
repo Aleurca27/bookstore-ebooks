@@ -1,246 +1,208 @@
-import { webpayConfig, type WebPayTransaction, type WebPayConfirmation } from '../config/webpay'
-import { supabase } from '../config/supabase'
-import type { User } from '@supabase/supabase-js'
-
-export interface PaymentIntent {
-  buyOrder: string
-  sessionId: string
-  amount: number
-  userId: string
-  cartItems: Array<{
-    ebook_id: string
-    price: number
-    title: string
-  }>
+// Servicio para integración con Grupo Aleurca Payment API
+export interface PaymentItem {
+  id: string;
+  name: string;
+  unit_price: number;
+  quantity: number;
 }
 
-export class PaymentService {
+export interface PaymentCredentials {
+  access_token?: string; // Para MercadoPago
+  id?: string; // Para WebPay
+  secretId?: string; // Para WebPay
+}
+
+export interface PaymentRequest {
+  payment_type: 'MP' | 'WEBPAY';
+  currency: 'CLP';
+  items: PaymentItem[];
+  back_urls: {
+    success: string;
+  };
+  notification_url: string;
+  external_id: string;
+  commerce_name: string;
+  credential: PaymentCredentials;
+}
+
+export interface MercadoPagoResponse {
+  isValid: boolean;
+  message: string;
+  response: {
+    id: string;
+    init_point: string;
+    sandbox_init_point: string;
+    date_created: string;
+    external_id: string;
+  };
+}
+
+export interface WebPayResponse {
+  isValid: boolean;
+  message: string;
+  response: {
+    token: string;
+    url: string;
+  };
+}
+
+export type PaymentResponse = MercadoPagoResponse | WebPayResponse;
+
+class PaymentService {
+  private readonly API_BASE_URL = 'https://api.grupoaleurca.cl/v1/api/payments';
   
+  // Credenciales para MercadoPago (PRODUCCIÓN)
+  private readonly MP_CREDENTIALS = {
+    access_token: 'APP_USR-7433295818776236-122911-5d0fc08dfe90fb448d1c224b18c0345b-1464289518'
+  };
+  
+  // Credenciales para WebPay
+  private readonly WEBPAY_CREDENTIALS = {
+    id: '597045351881',
+    secretId: '5cc16428d5acc0fd23b8884665cd20dd'
+  };
+
   /**
-   * Crear transacción en WebPay (usando API real)
+   * Inicializa un pago con MercadoPago
    */
-  static async createTransaction(paymentIntent: PaymentIntent): Promise<WebPayTransaction> {
+  async initializeMercadoPagoPayment(
+    items: PaymentItem[],
+    externalId: string,
+    successUrl: string,
+    notificationUrl: string
+  ): Promise<MercadoPagoResponse> {
+    const paymentRequest: PaymentRequest = {
+      payment_type: 'MP',
+      currency: 'CLP',
+      items,
+      back_urls: {
+        success: successUrl
+      },
+      notification_url: notificationUrl,
+      external_id: externalId,
+      commerce_name: 'ALEURCA',
+      credential: this.MP_CREDENTIALS
+    };
+
+    return this.makePaymentRequest<MercadoPagoResponse>(paymentRequest);
+  }
+
+  /**
+   * Inicializa un pago con WebPay
+   */
+  async initializeWebPayPayment(
+    items: PaymentItem[],
+    externalId: string,
+    successUrl: string,
+    notificationUrl: string
+  ): Promise<WebPayResponse> {
+    const paymentRequest: PaymentRequest = {
+      payment_type: 'WEBPAY',
+      currency: 'CLP',
+      items,
+      back_urls: {
+        success: successUrl
+      },
+      notification_url: notificationUrl,
+      external_id: externalId,
+      commerce_name: 'ALEURCA',
+      credential: this.WEBPAY_CREDENTIALS
+    };
+
+    return this.makePaymentRequest<WebPayResponse>(paymentRequest);
+  }
+
+  /**
+   * Realiza la petición HTTP a la API de pagos
+   */
+  private async makePaymentRequest<T extends PaymentResponse>(request: PaymentRequest): Promise<T> {
     try {
-      // Guardar la transacción pendiente primero
-      await this.savePendingTransaction(paymentIntent, 'temp_token')
-      
-      // Llamar a la API para crear la transacción real
-      const response = await fetch('/api/create-payment', {
+      const response = await fetch(`${this.API_BASE_URL}/initialize`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
-        body: JSON.stringify({
-          buyOrder: paymentIntent.buyOrder,
-          sessionId: paymentIntent.sessionId,
-          amount: paymentIntent.amount,
-          returnUrl: `${window.location.origin}/payment/confirmation`
-        })
-      })
+        body: JSON.stringify(request)
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Error al crear la transacción')
+        throw new Error(`Error en la API de pagos: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json()
+      const data = await response.json();
       
-      // Actualizar la transacción con el token real
-      await this.updateTransactionToken('temp_token', data.token, paymentIntent.userId)
-
-      return {
-        token: data.token,
-        url: data.url
-      }
-    } catch (error) {
-      console.error('Error creating WebPay transaction:', error)
-      throw new Error('Error al crear la transacción de pago')
-    }
-  }
-
-  /**
-   * Confirmar transacción después del pago (usando API real)
-   */
-  static async confirmTransaction(token: string): Promise<WebPayConfirmation> {
-    try {
-      // Llamar a la API para confirmar la transacción real
-      const response = await fetch('/api/confirm-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ token })
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Error al confirmar la transacción')
+      if (!data.isValid) {
+        throw new Error(`Error en la inicialización del pago: ${data.message}`);
       }
 
-      const confirmation = await response.json()
-      return confirmation
-      
+      return data as T;
     } catch (error) {
-      console.error('Error confirming WebPay transaction:', error)
-      throw new Error('Error al confirmar la transacción')
+      console.error('Error al inicializar el pago:', error);
+      throw error;
     }
   }
 
   /**
-   * Generar número de orden único
+   * Genera un ID externo único para la transacción
    */
-  static generateBuyOrder(): string {
-    const timestamp = Date.now()
-    const random = Math.floor(Math.random() * 1000)
-    return `EB-${timestamp}-${random}`
+  generateExternalId(): string {
+    return `ebook_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   /**
-   * Generar ID de sesión único
+   * Redirige al usuario a la URL de pago
    */
-  static generateSessionId(userId: string): string {
-    const timestamp = Date.now()
-    return `${userId}-${timestamp}`
-  }
-
-  /**
-   * Actualizar token de transacción temporal
-   */
-  private static async updateTransactionToken(tempToken: string, realToken: string, userId: string): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('webpay_transactions')
-        .update({ token: realToken })
-        .eq('token', tempToken)
-        .eq('user_id', userId)
-
-      if (error) throw error
-    } catch (error) {
-      console.error('Error updating transaction token:', error)
-      throw error
+  redirectToPayment(paymentUrl: string, paymentMethod: 'MP' | 'WEBPAY', token?: string): void {
+    if (paymentMethod === 'WEBPAY' && token) {
+      // Para WebPay, usar formulario HTML con POST
+      this.redirectToWebPay(token);
+    } else {
+      // Para MercadoPago, redirección directa
+      window.location.href = paymentUrl;
     }
   }
 
   /**
-   * Guardar transacción pendiente
+   * Redirige a WebPay usando formulario HTML
    */
-  private static async savePendingTransaction(
-    paymentIntent: PaymentIntent, 
-    token: string
-  ): Promise<void> {
-    try {
-      // Guardar la transacción principal
-      const { error: transactionError } = await supabase
-        .from('webpay_transactions')
-        .insert({
-          token,
-          buy_order: paymentIntent.buyOrder,
-          session_id: paymentIntent.sessionId,
-          amount: paymentIntent.amount,
-          user_id: paymentIntent.userId,
-          status: 'pending',
-          cart_items: paymentIntent.cartItems
-        })
+  private redirectToWebPay(token: string): void {
+    // Crear formulario dinámico
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'https://webpay3g.transbank.cl/webpayserver/initTransaction';
+    form.style.display = 'none';
 
-      if (transactionError) throw transactionError
+    // Crear input hidden para el token
+    const tokenInput = document.createElement('input');
+    tokenInput.type = 'hidden';
+    tokenInput.name = 'token_ws';
+    tokenInput.value = token;
 
-    } catch (error) {
-      console.error('Error saving pending transaction:', error)
-      throw error
-    }
+    // Agregar input al formulario
+    form.appendChild(tokenInput);
+
+    // Agregar formulario al DOM y enviarlo
+    document.body.appendChild(form);
+    form.submit();
   }
 
   /**
-   * Procesar confirmación del pago
+   * Crea los items de pago para el ebook
    */
-  private static async processPaymentConfirmation(
-    token: string, 
-    confirmation: WebPayConfirmation
-  ): Promise<void> {
-    try {
-      // Obtener los detalles de la transacción pendiente
-      const { data: transaction, error: fetchError } = await supabase
-        .from('webpay_transactions')
-        .select('*')
-        .eq('token', token)
-        .single()
-
-      if (fetchError || !transaction) {
-        throw new Error('Transacción no encontrada')
+  createEbookPaymentItems(price: number): PaymentItem[] {
+    return [
+      {
+        id: 'ebook_publicidad',
+        name: 'Ebook de la Publicidad',
+        unit_price: price,
+        quantity: 1
       }
-
-      // Verificar si el pago fue exitoso
-      const isSuccess = confirmation.response_code === 0 && confirmation.status === 'AUTHORIZED'
-
-      if (isSuccess) {
-        // Actualizar estado de la transacción
-        await supabase
-          .from('webpay_transactions')
-          .update({
-            status: 'completed',
-            webpay_response: confirmation,
-            authorization_code: confirmation.authorization_code,
-            updated_at: new Date().toISOString()
-          })
-          .eq('token', token)
-
-        // Crear registros de compra para cada item
-        const purchases = transaction.cart_items.map((item: any) => ({
-          user_id: transaction.user_id,
-          ebook_id: item.ebook_id,
-          amount: item.price,
-          webpay_token: token,
-          webpay_buy_order: transaction.buy_order,
-          webpay_authorization_code: confirmation.authorization_code,
-          status: 'completed'
-        }))
-
-        const { error: purchaseError } = await supabase
-          .from('purchases')
-          .insert(purchases)
-
-        if (purchaseError) throw purchaseError
-
-        // Limpiar carrito del usuario
-        await supabase
-          .from('cart_items')
-          .delete()
-          .eq('user_id', transaction.user_id)
-
-      } else {
-        // Marcar transacción como fallida
-        await supabase
-          .from('webpay_transactions')
-          .update({
-            status: 'failed',
-            webpay_response: confirmation,
-            updated_at: new Date().toISOString()
-          })
-          .eq('token', token)
-      }
-
-    } catch (error) {
-      console.error('Error processing payment confirmation:', error)
-      throw error
-    }
-  }
-
-  /**
-   * Obtener estado de una transacción
-   */
-  static async getTransactionStatus(token: string) {
-    try {
-      const { data, error } = await supabase
-        .from('webpay_transactions')
-        .select('*')
-        .eq('token', token)
-        .single()
-
-      if (error) throw error
-      return data
-    } catch (error) {
-      console.error('Error getting transaction status:', error)
-      throw error
-    }
+    ];
   }
 }
+
+export const paymentService = new PaymentService();
+
+// Exportar también la clase para compatibilidad
+export { PaymentService };
