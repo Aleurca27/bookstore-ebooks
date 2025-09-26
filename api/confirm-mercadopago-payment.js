@@ -201,6 +201,7 @@ async function processGuestPurchase(paymentInfo, supabase) {
       status: 'completed',
       payment_method: 'mercadopago',
       mercado_pago_payment_id: paymentInfo.id,
+      external_id: paymentInfo.external_reference, // Guardar el external_id usado en el pago
       updated_at: new Date().toISOString()
     })
     .eq('id', guestPurchase.id)

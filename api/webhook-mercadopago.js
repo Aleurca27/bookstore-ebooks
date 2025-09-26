@@ -53,12 +53,26 @@ export default async function handler(req, res) {
       return res.status(500).json({ message: 'Error validando pago' })
     }
 
-    // Buscar la compra en la base de datos
-    const { data: purchase, error: findError } = await supabase
+    // Buscar la compra en la base de datos por payment_id o external_id
+    let { data: purchase, error: findError } = await supabase
       .from('guest_purchases')
       .select('*')
       .eq('payment_id', paymentId)
       .single()
+
+    // Si no se encuentra por payment_id, buscar por external_id
+    if (findError && validationResult.externalReference) {
+      const { data: purchaseByExternal, error: externalError } = await supabase
+        .from('guest_purchases')
+        .select('*')
+        .eq('external_id', validationResult.externalReference)
+        .single()
+      
+      if (!externalError && purchaseByExternal) {
+        purchase = purchaseByExternal
+        findError = null
+      }
+    }
 
     if (findError || !purchase) {
       console.error('Compra no encontrada para pago:', paymentId)
@@ -82,6 +96,7 @@ export default async function handler(req, res) {
     const updateData = {
       status: newStatus,
       payment_data: validationResult,
+      external_id: validationResult.externalReference, // Asegurar que se guarde el external_id
       updated_at: new Date().toISOString()
     }
 
