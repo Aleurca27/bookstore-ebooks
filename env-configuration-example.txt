@@ -1,0 +1,28 @@
+# Variables de entorno para el proyecto de Ebooks
+# Copiar este archivo a .env.local y configurar con tus valores reales
+
+# Supabase Configuration
+VITE_SUPABASE_URL=https://fdxmbeijgmlgefesnhnd.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkeG1iZWlqZ21sZ2VmZXNuaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg0MDY1MzYsImV4cCI6MjA3Mzk4MjUzNn0.HZ-7CADEMgd53MtJo-ryxVh2Qh9u8mVZfksOmRe5YUU
+
+# MercadoPago Configuration
+MERCADOPAGO_ACCESS_TOKEN=tu_access_token_de_mercadopago_aqui
+MERCADOPAGO_PUBLIC_KEY=APP_USR-c2104a09-00e7-4e07-8475-8bf44ed7a4a0
+MERCADOPAGO_CLIENT_ID=7433295818776236
+MERCADOPAGO_CLIENT_SECRET=bqx1R0XRJbe1qgYJoeXCF3lh3dcFu39j
+
+# Email Configuration
+EMAIL_HOST=mail.emprendecl.com
+EMAIL_PORT=465
+EMAIL_USER=contacto@emprendecl.com
+EMAIL_PASS=tu_password_de_email_aqui
+
+# Environment
+NODE_ENV=development
+VITE_SITE_URL=http://localhost:5173
+VERCEL_URL=http://localhost:3000
+
+# WebPay Configuration (opcional, para futuro uso)
+WEBPAY_COMMERCE_CODE=tu_commerce_code_aqui
+WEBPAY_API_KEY=tu_api_key_aqui
+WEBPAY_ENVIRONMENT=integration

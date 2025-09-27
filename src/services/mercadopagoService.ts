@@ -90,15 +90,14 @@ export class MercadoPagoService {
   }
 
   /**
-   * Procesar pago exitoso
+   * Procesar pago exitoso (unificado)
    */
   static async processSuccessfulPayment(
     paymentId: string, 
     externalReference: string
   ): Promise<void> {
     try {
-      // Extraer user_id y ebook_id del external_reference
-      const [userId, ebookId] = externalReference.split('-')
+      console.log('💳 Procesando pago exitoso:', { paymentId, externalReference })
       
       // Verificar que el pago no haya sido procesado antes
       const { data: existingPurchase } = await supabase
@@ -108,7 +107,7 @@ export class MercadoPagoService {
         .maybeSingle()
 
       if (existingPurchase) {
-        console.log('Payment already processed')
+        console.log('✅ Pago ya procesado anteriormente')
         return
       }
 
@@ -116,33 +115,66 @@ export class MercadoPagoService {
       const paymentInfo = await this.checkPaymentStatus(paymentId)
       
       if (paymentInfo.status === 'approved') {
-        // Crear el registro de compra
+        // Determinar si es usuario registrado o invitado
+        const isGuest = externalReference.includes('GUEST-')
+        
+        const purchaseData = {
+          mercadopago_payment_id: paymentId,
+          amount: paymentInfo.transaction_amount / 1000, // Convertir de centavos
+          status: 'completed',
+          payment_method: 'mercadopago',
+          mercadopago_status: paymentInfo.status,
+          mercadopago_status_detail: paymentInfo.status_detail,
+          customer_email: paymentInfo.payer?.email || 'No disponible'
+        }
+
+        if (isGuest) {
+          // Para invitados, buscar datos en guest_purchases
+          const purchaseId = externalReference.replace('GUEST-', '').split('-')[0]
+          
+          const { data: guestData } = await supabase
+            .from('guest_purchases')
+            .select('*')
+            .eq('id', purchaseId)
+            .single()
+
+          if (guestData) {
+            Object.assign(purchaseData, {
+              ebook_id: guestData.ebook_id,
+              customer_name: guestData.name,
+              customer_phone: guestData.phone,
+              access_password: guestData.access_password
+            })
+          }
+        } else {
+          // Para usuarios registrados
+          const [userId, ebookId] = externalReference.split('-')
+          
+          Object.assign(purchaseData, {
+            user_id: userId,
+            ebook_id: ebookId
+          })
+
+          // Limpiar el item del carrito
+          await supabase
+            .from('cart_items')
+            .delete()
+            .eq('user_id', userId)
+            .eq('ebook_id', ebookId)
+        }
+
+        // Crear el registro de compra unificado
         const { error } = await supabase
           .from('purchases')
-          .insert({
-            user_id: userId,
-            ebook_id: ebookId,
-            amount: paymentInfo.transaction_amount,
-            status: 'completed',
-            mercadopago_payment_id: paymentId,
-            mercadopago_status: paymentInfo.status,
-            mercadopago_status_detail: paymentInfo.status_detail
-          })
+          .insert(purchaseData)
 
         if (error) throw error
 
-        // Limpiar el item del carrito si existe
-        await supabase
-          .from('cart_items')
-          .delete()
-          .eq('user_id', userId)
-          .eq('ebook_id', ebookId)
-
-        console.log('Purchase completed successfully')
+        console.log('✅ Compra procesada exitosamente')
       }
       
     } catch (error) {
-      console.error('Error processing successful payment:', error)
+      console.error('❌ Error procesando pago exitoso:', error)
       throw error
     }
   }

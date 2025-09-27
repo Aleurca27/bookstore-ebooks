@@ -419,7 +419,7 @@ export default function Home() {
                       {/* Price badge */}
                       <div className="absolute top-4 right-4">
                         <div className="bg-white/90 backdrop-blur-sm px-3 py-2 rounded-full text-gray-900 font-bold text-sm">
-                          $25.000 CLP
+                          $29.900 CLP
                         </div>
                       </div>
 

@@ -20,12 +20,12 @@ export default async function handler(req, res) {
     console.log('🔧 Configurando Nodemailer...')
     
     const transporter = nodemailer.createTransport({
-      host: 'mail.emprendecl.com',
-      port: 465,
-        secure: true, // true para 465, false para otros puertos
+      host: process.env.EMAIL_HOST || 'mail.emprendecl.com',
+      port: parseInt(process.env.EMAIL_PORT) || 465,
+      secure: true, // true para 465, false para otros puertos
       auth: {
-        user: "contacto@emprendecl.com",
-        pass: "Aleurca3322"
+        user: process.env.EMAIL_USER || "contacto@emprendecl.com",
+        pass: process.env.EMAIL_PASS || "Aleurca3322"
       },
       tls: {
         rejectUnauthorized: false,

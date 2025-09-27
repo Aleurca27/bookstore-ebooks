@@ -84,7 +84,6 @@ function App() {
                 <Route path="/carrito" element={<Cart user={user} />} />
               <Route path="/admin" element={<Admin user={user} />} />
               <Route path="/payment/confirmation" element={<PaymentConfirmation />} />
-              <Route path="/pago-exitoso" element={<PaymentSuccess />} />
               <Route path="/payment/success" element={<PaymentSuccess />} />
               <Route path="/payment/failure" element={<PaymentFailure />} />
               <Route path="/payment/pending" element={<PaymentPending />} />
