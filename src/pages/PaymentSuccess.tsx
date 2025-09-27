@@ -84,6 +84,8 @@ export default function PaymentSuccess() {
       let purchaseData = null
 
       if (paymentId) {
+        console.log('🔍 Buscando compra por payment_id:', paymentId)
+        
         // Buscar en la tabla unificada de purchases
         const { data, error } = await supabase
           .from('purchases')
@@ -91,12 +93,46 @@ export default function PaymentSuccess() {
           .eq('mercadopago_payment_id', paymentId)
           .single()
 
+        console.log('📊 Resultado búsqueda por payment_id:', { data, error })
+
         if (error && error.code !== 'PGRST116') {
           console.error('Error buscando compra:', error)
         } else if (data) {
           purchaseData = data
+          console.log('✅ Compra encontrada por payment_id:', data)
+        } else {
+          console.log('⚠️ No se encontró compra por payment_id, intentando búsqueda alternativa...')
+          
+          // Buscar también en guest_purchases como fallback
+          const { data: guestData, error: guestError } = await supabase
+            .from('guest_purchases')
+            .select('*')
+            .eq('mercado_pago_payment_id', paymentId)
+            .single()
+
+          console.log('📊 Resultado búsqueda en guest_purchases:', { guestData, guestError })
+
+          if (guestData && !guestError) {
+            // Convertir guest purchase a formato de purchase
+            purchaseData = {
+              id: guestData.id,
+              user_id: null,
+              ebook_id: guestData.ebook_id,
+              amount: guestData.amount,
+              status: guestData.status,
+              mercadopago_payment_id: guestData.mercado_pago_payment_id,
+              customer_email: guestData.email,
+              customer_name: guestData.name,
+              customer_phone: guestData.phone,
+              access_password: guestData.access_password,
+              created_at: guestData.created_at
+            }
+            console.log('✅ Compra de invitado encontrada:', purchaseData)
+          }
         }
       } else if (externalReference) {
+        console.log('🔍 Buscando compra por external_reference:', externalReference)
+        
         // Buscar por external_reference en la tabla unificada
         const { data, error } = await supabase
           .from('purchases')
@@ -104,10 +140,13 @@ export default function PaymentSuccess() {
           .eq('webpay_token', externalReference)
           .single()
 
+        console.log('📊 Resultado búsqueda por external_reference:', { data, error })
+
         if (error && error.code !== 'PGRST116') {
           console.error('Error buscando compra por external_reference:', error)
         } else if (data) {
           purchaseData = data
+          console.log('✅ Compra encontrada por external_reference:', data)
         }
       }
 
